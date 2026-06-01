@@ -35,7 +35,7 @@ A personality driven by curiosity, continuous learning, and the desire to build 
 - Professional
 
 ## Day 1 Completed
-Setup Claude and create a Claude Project named “60 Days of AI”
-Built AI Personality Profile using Claude AI
-Create a public GitHub repository named '60-days-claude-challenge'
-Added README and AI Personality Profile
+- Setup Claude and create a Claude Project named “60 Days of AI”
+- Built AI Personality Profile using Claude AI
+- Create a public GitHub repository named '60-days-claude-challenge'
+- Added README and AI Personality Profile
