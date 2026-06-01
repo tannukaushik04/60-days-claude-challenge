@@ -1,0 +1,511 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .profile-root {
+    font-family: 'Space Grotesk', sans-serif;
+    background: #0a0a0f;
+    color: #e8e4f0;
+    min-height: 100vh;
+    padding: 0 0 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(120,80,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,80,255,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .content { position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d0818 0%, #120d22 50%, #0a1020 100%);
+    border-bottom: 1px solid rgba(120,80,255,0.2);
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(120,80,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .badge {
+    display: inline-block;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: #a78bfa;
+    border: 1px solid rgba(167,139,250,0.3);
+    padding: 4px 14px;
+    border-radius: 100px;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+  }
+  .hero-title {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #c4b5fd, #818cf8, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+  }
+  .hero-sub {
+    font-size: 13px;
+    color: #6b6a7d;
+    font-family: 'Space Mono', monospace;
+    margin-bottom: 1.5rem;
+  }
+  .ai-title-chip {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(167,139,250,0.15), rgba(56,189,248,0.1));
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 12px;
+    padding: 10px 22px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #c4b5fd;
+    letter-spacing: 0.5px;
+  }
+  .ai-title-label {
+    font-size: 11px;
+    color: #5b5a6e;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* CINEMATIC BIO */
+  .cinematic {
+    margin: 1.5rem 1.25rem;
+    background: linear-gradient(135deg, rgba(120,80,255,0.06), rgba(56,189,248,0.04));
+    border: 1px solid rgba(120,80,255,0.15);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+  }
+  .cinematic::before {
+    content: '"';
+    position: absolute;
+    top: -8px; left: 16px;
+    font-size: 60px;
+    color: rgba(167,139,250,0.2);
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .cinematic-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #b8b4cc;
+    font-style: italic;
+    padding-top: 0.5rem;
+  }
+  .cinematic-text em { color: #a78bfa; font-style: normal; font-weight: 500; }
+
+  /* SECTION */
+  .section {
+    margin: 0 1.25rem 1rem;
+  }
+  .sec-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+  }
+  .sec-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #a78bfa;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+  .sec-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #7c7a90;
+  }
+
+  /* STAT CARDS */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  .stat-card .label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #5b5a6e;
+    margin-bottom: 6px;
+    font-family: 'Space Mono', monospace;
+  }
+  .stat-card .value {
+    font-size: 13px;
+    font-weight: 500;
+    color: #d4d0e8;
+    line-height: 1.5;
+  }
+  .stat-card.accent {
+    border-color: rgba(167,139,250,0.2);
+    background: rgba(167,139,250,0.05);
+  }
+  .stat-card.accent .value { color: #c4b5fd; }
+  .stat-card.teal {
+    border-color: rgba(56,189,248,0.2);
+    background: rgba(56,189,248,0.04);
+  }
+  .stat-card.teal .value { color: #7dd3fc; }
+
+  /* WIDE CARD */
+  .wide-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 10px;
+  }
+  .wide-card .heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: #c4b5fd;
+    margin-bottom: 6px;
+  }
+  .wide-card .body {
+    font-size: 13px;
+    color: #9290a8;
+    line-height: 1.7;
+  }
+
+  /* SKILL BARS */
+  .skill-item {
+    margin-bottom: 12px;
+  }
+  .skill-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .skill-name { font-size: 12px; color: #b8b4cc; }
+  .skill-pct { font-size: 11px; color: #5b5a6e; font-family: 'Space Mono', monospace; }
+  .skill-bar-bg {
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .skill-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, #7c3aed, #38bdf8);
+  }
+
+  /* TAG CLOUD */
+  .tags { display: flex; flex-wrap: wrap; gap: 7px; }
+  .tag {
+    font-size: 11px;
+    padding: 4px 11px;
+    border-radius: 100px;
+    font-family: 'Space Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+  .tag.v { background: rgba(167,139,250,0.1); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .tag.b { background: rgba(56,189,248,0.08); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.18); }
+  .tag.g { background: rgba(52,211,153,0.08); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.18); }
+  .tag.r { background: rgba(251,113,133,0.08); color: #fda4af; border: 1px solid rgba(251,113,133,0.18); }
+
+  /* SWOT */
+  .swot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .swot-cell {
+    border-radius: 10px;
+    padding: 0.9rem;
+  }
+  .swot-cell .s-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 8px;
+    font-family: 'Space Mono', monospace;
+  }
+  .swot-cell ul { padding-left: 14px; }
+  .swot-cell ul li { font-size: 12px; line-height: 1.7; color: #9290a8; }
+  .swot-cell.s { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.15); }
+  .swot-cell.s .s-label { color: #6ee7b7; }
+  .swot-cell.w { background: rgba(251,113,133,0.05); border: 1px solid rgba(251,113,133,0.15); }
+  .swot-cell.w .s-label { color: #fda4af; }
+
+  /* CAREER PATHS */
+  .career-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .career-item:last-child { border-bottom: none; }
+  .career-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .career-icon.a { background: rgba(167,139,250,0.12); }
+  .career-icon.b { background: rgba(56,189,248,0.1); }
+  .career-icon.c { background: rgba(52,211,153,0.08); }
+  .career-icon.d { background: rgba(251,186,39,0.1); }
+  .career-name { font-size: 13px; font-weight: 600; color: #d4d0e8; margin-bottom: 3px; }
+  .career-desc { font-size: 12px; color: #6b6a7d; line-height: 1.5; }
+
+  /* IMPROVE */
+  .improve-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+  .improve-num {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: #a78bfa;
+    background: rgba(167,139,250,0.1);
+    border-radius: 6px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .improve-text { font-size: 13px; color: #9290a8; line-height: 1.6; }
+  .improve-text strong { color: #c4b5fd; font-weight: 500; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 1.5rem 1rem 0.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: #3d3c4e;
+    letter-spacing: 1px;
+  }
+  .footer span { color: #5b5a6e; }
+</style>
+
+<div class="profile-root">
+  <div class="grid-bg"></div>
+  <div class="content">
+
+    <!-- HERO -->
+    <div class="hero">
+      <div class="badge">// AI Personality Profile — v1.0</div>
+      <div class="hero-title">The Builder-Learner<br>Singularity</div>
+      <div class="hero-sub">AI × Data Science × Ambition</div>
+      <div class="ai-title-chip">⚡ The Architect of Unfinished Futures</div>
+      <div class="ai-title-label">Your AI Title</div>
+    </div>
+
+    <!-- CINEMATIC BIO -->
+    <div class="cinematic">
+      <p class="cinematic-text">
+        She doesn't wait for permission to build. In a dark room lit by the blue glow of terminals and model outputs,
+        she architects her future <em>one dataset at a time</em>. Equal parts researcher and engineer, 
+        she speaks fluently in code, concepts, and curiosity — annotating her own growth like 
+        a well-maintained <em>GitHub repo</em>. She carries ambition like a constant variable: 
+        always present, rarely bounded. The world is her <em>training environment</em>, 
+        and she's optimizing relentlessly toward elite.
+      </p>
+    </div>
+
+    <!-- WORKING STYLE -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">01</span><span class="sec-title">AI Working Style</span></div>
+      <div class="stat-grid">
+        <div class="stat-card accent">
+          <div class="label">Mode</div>
+          <div class="value">Project-first, learn-by-doing</div>
+        </div>
+        <div class="stat-card teal">
+          <div class="label">Output</div>
+          <div class="value">Notes, code, research, content</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Approach</div>
+          <div class="value">Deep dives over quick answers</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">Pattern</div>
+          <div class="value">Structure → Build → Document</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKILLS -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">02</span><span class="sec-title">Strengths & Weaknesses</span></div>
+      <div class="swot-grid">
+        <div class="swot-cell s">
+          <div class="s-label">Strengths</div>
+          <ul>
+            <li>Consistent learner</li>
+            <li>Strong documentation mindset</li>
+            <li>Problem-solving instinct</li>
+            <li>Goal clarity & commitment</li>
+            <li>Tech adoption speed</li>
+          </ul>
+        </div>
+        <div class="swot-cell w">
+          <div class="s-label">Weaknesses</div>
+          <ul>
+            <li>Perfectionism trap</li>
+            <li>Overthinking decisions</li>
+            <li>Under-delegates tasks</li>
+            <li>May over-research vs ship</li>
+            <li>Hard on yourself</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI USER TYPE -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">03</span><span class="sec-title">What Type of AI User You Are</span></div>
+      <div class="wide-card">
+        <div class="heading">🧠 The Cognitive Augmenter</div>
+        <div class="body">You use AI not to replace thinking — but to <em style="color:#c4b5fd">amplify it</em>. You come prepared, ask precise questions, and push AI toward depth. You treat it like a senior collaborator, not a search engine. You're in the top 5% of intentional AI users.</div>
+      </div>
+      <div class="tags">
+        <span class="tag v">Research-heavy</span>
+        <span class="tag b">Note-architect</span>
+        <span class="tag g">Code collaborator</span>
+        <span class="tag r">Content strategist</span>
+        <span class="tag v">Deep-dive requester</span>
+        <span class="tag b">Multi-domain learner</span>
+      </div>
+    </div>
+
+    <!-- CAREER PATHS -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">04</span><span class="sec-title">Best Career Paths</span></div>
+      <div class="wide-card" style="padding-bottom:0.25rem">
+        <div class="career-item">
+          <div class="career-icon a"><i class="ti ti-brain" style="font-size:18px;color:#a78bfa" aria-hidden="true"></i></div>
+          <div>
+            <div class="career-name">ML/AI Engineer</div>
+            <div class="career-desc">Building intelligent systems end-to-end — your sweet spot where code meets research.</div>
+          </div>
+        </div>
+        <div class="career-item">
+          <div class="career-icon b"><i class="ti ti-chart-dots" style="font-size:18px;color:#7dd3fc" aria-hidden="true"></i></div>
+          <div>
+            <div class="career-name">Data Scientist</div>
+            <div class="career-desc">Extracting insights and building models — aligns with your math curiosity and structured thinking.</div>
+          </div>
+        </div>
+        <div class="career-item">
+          <div class="career-icon c"><i class="ti ti-robot" style="font-size:18px;color:#6ee7b7" aria-hidden="true"></i></div>
+          <div>
+            <div class="career-name">AI Product Builder / Founder</div>
+            <div class="career-desc">Your creativity + tech depth = serious founder energy. Build the tools others use.</div>
+          </div>
+        </div>
+        <div class="career-item">
+          <div class="career-icon d"><i class="ti ti-school" style="font-size:18px;color:#fcd34d" aria-hidden="true"></i></div>
+          <div>
+            <div class="career-name">AI Researcher / Educator</div>
+            <div class="career-desc">Your documentation instinct and curiosity make you a natural for research or teaching AI.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEARNING STYLE -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">05</span><span class="sec-title">Learning & Decision-Making Style</span></div>
+      <div class="skill-item">
+        <div class="skill-row"><span class="skill-name">Structured note-taking & synthesis</span><span class="skill-pct">96%</span></div>
+        <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:96%"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-row"><span class="skill-name">Hands-on project learning</span><span class="skill-pct">92%</span></div>
+        <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:92%"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-row"><span class="skill-name">Research-before-decide mindset</span><span class="skill-pct">88%</span></div>
+        <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:88%"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-row"><span class="skill-name">Iterative, growth-loop thinking</span><span class="skill-pct">85%</span></div>
+        <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:85%"></div></div>
+      </div>
+      <div class="skill-item">
+        <div class="skill-row"><span class="skill-name">Fast shipping (needs leveling up)</span><span class="skill-pct">61%</span></div>
+        <div class="skill-bar-bg"><div class="skill-bar-fill" style="width:61%"></div></div>
+      </div>
+    </div>
+
+    <!-- WHAT MAKES YOU DIFFERENT -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">06</span><span class="sec-title">What Makes You Different</span></div>
+      <div class="wide-card">
+        <div class="body">Most AI users ask for answers. <strong style="color:#c4b5fd">You ask for understanding.</strong> You come with context, you push for depth, and you document everything — treating each AI session like a workshop, not a vending machine. You combine creative thinking with technical ambition in a way most people pick only one of. You're building a career <em style="color:#c4b5fd">and</em> a knowledge base simultaneously.</div>
+      </div>
+    </div>
+
+    <!-- TO BECOME ELITE -->
+    <div class="section">
+      <div class="sec-header"><span class="sec-num">07</span><span class="sec-title">What You Need to Become Elite With AI</span></div>
+      <div class="improve-item">
+        <span class="improve-num">01</span>
+        <div class="improve-text"><strong>Ship faster, perfect later.</strong> Treat AI outputs as v0.1, not final. Bias toward action.</div>
+      </div>
+      <div class="improve-item">
+        <span class="improve-num">02</span>
+        <div class="improve-text"><strong>Master prompt engineering</strong> — system prompts, chain-of-thought, multi-step agents. Go beyond chat.</div>
+      </div>
+      <div class="improve-item">
+        <span class="improve-num">03</span>
+        <div class="improve-text"><strong>Build with APIs.</strong> Move from AI user → AI builder. Code your own tools using LLM APIs.</div>
+      </div>
+      <div class="improve-item">
+        <span class="improve-num">04</span>
+        <div class="improve-text"><strong>Delegate and trust.</strong> Use AI agents for repetitive tasks. Your brain is for strategy, not execution.</div>
+      </div>
+      <div class="improve-item">
+        <span class="improve-num">05</span>
+        <div class="improve-text"><strong>Build in public.</strong> Share your projects, notes, and progress. Network compounds.</div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      GENERATED BY CLAUDE · <span>PERSONALIZED AI PROFILE</span> · 2026
+    </div>
+
+  </div>
+</div>
