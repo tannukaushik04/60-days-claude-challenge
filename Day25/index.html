@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Tank — AI Pitch Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg-void:#0a0e14;
+  --bg-panel:#0f141b;
+  --bg-card:#141b24;
+  --bg-card-raised:#1a232e;
+  --border-soft:#232e3b;
+  --border-strong:#2e3c4d;
+  --gold:#d4a843;
+  --gold-bright:#f0c668;
+  --gold-dim:#8a6f33;
+  --deal-green:#3fb88a;
+  --deal-green-bright:#56d9a8;
+  --shark-red:#e8542f;
+  --shark-red-bright:#ff7048;
+  --ink-100:#f4f1ea;
+  --ink-300:#c9d1d9;
+  --ink-500:#8b97a5;
+  --ink-700:#5a6675;
+  --font-display:'Oswald',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg-void);
+  color:var(--ink-300);
+  font-family:var(--font-body);
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+
+/* ambient backdrop texture */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(ellipse 900px 500px at 50% -10%, rgba(212,168,67,0.10), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 100% 100%, rgba(63,184,138,0.06), transparent 60%),
+    radial-gradient(ellipse 700px 600px at 0% 80%, rgba(232,84,47,0.06), transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+body::after{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+  background-size:48px 48px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.stage{
+  position:relative;
+  z-index:1;
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 24px 100px;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+}
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar{width:10px;}
+::-webkit-scrollbar-track{background:var(--bg-void);}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:5px;}
+
+/* ---------- Focus ---------- */
+:focus-visible{outline:2px solid var(--gold-bright);outline-offset:3px;border-radius:4px;}
+
+/* ===================== HEADER / MARQUEE ===================== */
+.tank-header{
+  position:relative;
+  padding:56px 24px 40px;
+  text-align:center;
+  border-bottom:1px solid var(--border-soft);
+  margin-bottom:48px;
+  overflow:hidden;
+}
+.tank-header .spot{
+  position:absolute;
+  top:-120px; left:50%;
+  width:600px; height:300px;
+  transform:translateX(-50%);
+  background:radial-gradient(ellipse at center, rgba(212,168,67,0.18), transparent 70%);
+  pointer-events:none;
+}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.28em;
+  text-transform:uppercase;
+  color:var(--gold);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:18px;
+}
+.eyebrow::before,.eyebrow::after{
+  content:'';
+  width:28px;height:1px;
+  background:var(--gold-dim);
+}
+.tank-title{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(40px,7vw,76px);
+  letter-spacing:-0.01em;
+  text-transform:uppercase;
+  line-height:0.96;
+  color:var(--ink-100);
+  text-shadow:0 0 40px rgba(212,168,67,0.15);
+}
+.tank-title em{
+  font-style:normal;
+  color:var(--gold-bright);
+}
+.tank-sub{
+  margin-top:14px;
+  font-size:16px;
+  color:var(--ink-500);
+  max-width:520px;
+  margin-inline:auto;
+}
+
+/* ===================== STEP INDICATOR ===================== */
+.step-rail{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  margin-bottom:44px;
+  flex-wrap:wrap;
+}
+.step-pip{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.05em;
+  color:var(--ink-700);
+  padding:0 18px;
+  position:relative;
+}
+.step-pip .num{
+  width:26px;height:26px;
+  border-radius:50%;
+  border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:600;
+  color:var(--ink-500);
+  transition:all .35s ease;
+}
+.step-pip.active .num{
+  background:var(--gold);
+  border-color:var(--gold);
+  color:#1a1407;
+  box-shadow:0 0 0 4px rgba(212,168,67,0.15);
+}
+.step-pip.done .num{
+  background:transparent;
+  border-color:var(--deal-green);
+  color:var(--deal-green-bright);
+}
+.step-pip.active span.label{color:var(--ink-100);}
+.step-pip.done span.label{color:var(--ink-500);}
+.step-rail .rail-line{
+  width:36px;height:1px;
+  background:var(--border-strong);
+}
+
+/* ===================== PANELS / SECTIONS ===================== */
+.panel{
+  display:none;
+  animation:rise .5s cubic-bezier(.2,.7,.25,1) both;
+}
+.panel.visible{display:block;}
+@keyframes rise{
+  from{opacity:0; transform:translateY(18px);}
+  to{opacity:1; transform:translateY(0);}
+}
+
+.panel-head{
+  text-align:center;
+  margin-bottom:36px;
+}
+.panel-head h2{
+  font-family:var(--font-display);
+  font-size:clamp(26px,4vw,38px);
+  text-transform:uppercase;
+  color:var(--ink-100);
+  letter-spacing:0.01em;
+}
+.panel-head p{
+  color:var(--ink-500);
+  margin-top:8px;
+  font-size:15px;
+}
+
+/* ===================== FORM ===================== */
+.form-card{
+  background:linear-gradient(155deg, var(--bg-card-raised), var(--bg-card));
+  border:1px solid var(--border-soft);
+  border-radius:18px;
+  padding:40px;
+  position:relative;
+  overflow:hidden;
+}
+.form-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg, var(--shark-red), var(--gold), var(--deal-green));
+}
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+}
+.field{display:flex; flex-direction:column; gap:8px;}
+.field.full{grid-column:1 / -1;}
+.field label{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--gold);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.field .hint{
+  font-size:12px;
+  color:var(--ink-700);
+  font-family:var(--font-body);
+  text-transform:none;
+  letter-spacing:0;
+  margin-left:4px;
+}
+.field input, .field textarea{
+  background:rgba(0,0,0,0.25);
+  border:1px solid var(--border-soft);
+  border-radius:10px;
+  padding:13px 14px;
+  color:var(--ink-100);
+  font-family:var(--font-body);
+  font-size:14.5px;
+  transition:border-color .2s, box-shadow .2s;
+  resize:vertical;
+}
+.field textarea{min-height:78px;line-height:1.5;}
+.field input::placeholder, .field textarea::placeholder{color:var(--ink-700);}
+.field input:focus, .field textarea:focus{
+  border-color:var(--gold-dim);
+  box-shadow:0 0 0 3px rgba(212,168,67,0.1);
+  outline:none;
+}
+.field-error{
+  font-size:12px;
+  color:var(--shark-red-bright);
+  min-height:16px;
+  display:none;
+}
+.field.invalid input, .field.invalid textarea{border-color:var(--shark-red);}
+.field.invalid .field-error{display:block;}
+
+.form-actions{
+  margin-top:32px;
+  display:flex;
+  justify-content:center;
+}
+
+/* ===================== BUTTONS ===================== */
+.btn{
+  font-family:var(--font-display);
+  font-size:15px;
+  text-transform:uppercase;
+  letter-spacing:0.04em;
+  font-weight:600;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  padding:16px 36px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.btn:active{transform:scale(0.97);}
+.btn-primary{
+  background:linear-gradient(135deg, var(--gold-bright), var(--gold));
+  color:#1a1407;
+  box-shadow:0 8px 24px -8px rgba(212,168,67,0.5);
+}
+.btn-primary:hover{filter:brightness(1.08); box-shadow:0 10px 30px -8px rgba(212,168,67,0.65);}
+.btn-ghost{
+  background:transparent;
+  border:1px solid var(--border-strong);
+  color:var(--ink-300);
+}
+.btn-ghost:hover{border-color:var(--gold-dim); color:var(--gold-bright);}
+.btn-green{
+  background:linear-gradient(135deg, var(--deal-green-bright), var(--deal-green));
+  color:#08231a;
+  box-shadow:0 8px 24px -8px rgba(63,184,138,0.5);
+}
+.btn-green:hover{filter:brightness(1.08);}
+.btn-sm{padding:10px 20px; font-size:13px;}
+.btn:disabled{opacity:0.4; cursor:not-allowed; filter:none !important; transform:none !important;}
+
+.btn-row{display:flex; gap:14px; flex-wrap:wrap; justify-content:center;}
+
+/* ===================== PITCH RECAP CARD ===================== */
+.pitch-recap{
+  background:linear-gradient(155deg, var(--bg-card-raised), var(--bg-card));
+  border:1px solid var(--border-soft);
+  border-radius:18px;
+  padding:32px 36px;
+  margin-bottom:40px;
+  position:relative;
+}
+.pitch-recap .recap-name{
+  font-family:var(--font-display);
+  font-size:30px;
+  text-transform:uppercase;
+  color:var(--gold-bright);
+  margin-bottom:18px;
+  display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;
+}
+.pitch-recap .recap-name .ask-tag{
+  font-family:var(--font-mono);
+  font-size:13px;
+  color:var(--deal-green-bright);
+  background:rgba(63,184,138,0.1);
+  border:1px solid rgba(63,184,138,0.3);
+  padding:5px 12px;
+  border-radius:20px;
+  text-transform:none;
+  letter-spacing:0;
+}
+.recap-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:18px 28px;
+}
+.recap-item .k{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-700);
+  margin-bottom:5px;
+}
+.recap-item .v{
+  font-size:14px;
+  color:var(--ink-300);
+  line-height:1.5;
+}
+
+/* ===================== JUDGE GRID ===================== */
+.judge-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:18px;
+  margin-bottom:40px;
+}
+.judge-card{
+  background:linear-gradient(160deg, var(--bg-card-raised), var(--bg-card));
+  border:1px solid var(--border-soft);
+  border-radius:16px;
+  padding:22px 18px;
+  text-align:center;
+  position:relative;
+  transition:border-color .3s, transform .3s;
+  animation:rise .5s cubic-bezier(.2,.7,.25,1) both;
+}
+.judge-card[data-judge="vc"]{animation-delay:.02s;}
+.judge-card[data-judge="founder"]{animation-delay:.08s;}
+.judge-card[data-judge="customer"]{animation-delay:.14s;}
+.judge-card[data-judge="angel"]{animation-delay:.2s;}
+.judge-card .emoji{
+  font-size:38px;
+  display:block;
+  margin-bottom:10px;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,0.4));
+}
+.judge-card .jname{
+  font-family:var(--font-display);
+  font-size:15px;
+  text-transform:uppercase;
+  color:var(--ink-100);
+  letter-spacing:0.02em;
+}
+.judge-card .jfocus{
+  font-size:11.5px;
+  color:var(--ink-700);
+  margin-top:4px;
+  font-family:var(--font-mono);
+}
+.judge-card .jmeter{
+  margin-top:14px;
+  height:5px;
+  border-radius:4px;
+  background:rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.judge-card .jmeter-fill{
+  height:100%;
+  width:0%;
+  border-radius:4px;
+  background:linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+  transition:width 1.1s cubic-bezier(.2,.8,.2,1);
+}
+.judge-card[data-mood="hot"] .jmeter-fill{background:linear-gradient(90deg, var(--deal-green), var(--deal-green-bright));}
+.judge-card[data-mood="cold"] .jmeter-fill{background:linear-gradient(90deg, var(--shark-red), var(--shark-red-bright));}
+.judge-card[data-mood="hot"]{border-color:rgba(63,184,138,0.35); box-shadow:0 0 0 1px rgba(63,184,138,0.08), 0 10px 30px -12px rgba(63,184,138,0.25);}
+.judge-card[data-mood="cold"]{border-color:rgba(232,84,47,0.35); box-shadow:0 0 0 1px rgba(232,84,47,0.08), 0 10px 30px -12px rgba(232,84,47,0.25);}
+.judge-card .jstatus{
+  margin-top:8px;
+  font-size:10.5px;
+  font-family:var(--font-mono);
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--ink-700);
+  min-height:14px;
+}
+.judge-card[data-mood="hot"] .jstatus{color:var(--deal-green-bright);}
+.judge-card[data-mood="cold"] .jstatus{color:var(--shark-red-bright);}
+
+/* ===================== Q&A THREAD ===================== */
+.qa-thread{display:flex; flex-direction:column; gap:18px; margin-bottom:28px;}
+.qa-bubble{
+  display:grid;
+  grid-template-columns:56px 1fr;
+  gap:16px;
+  animation:rise .45s cubic-bezier(.2,.7,.25,1) both;
+}
+.qa-bubble .qa-avatar{
+  width:48px;height:48px;
+  border-radius:50%;
+  background:var(--bg-card-raised);
+  border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+  align-self:start;
+}
+.qa-bubble .qa-body{
+  background:var(--bg-card);
+  border:1px solid var(--border-soft);
+  border-radius:14px;
+  padding:16px 18px;
+}
+.qa-bubble .qa-who{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--gold);
+  margin-bottom:6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.qa-bubble .qa-question{
+  font-size:15px;
+  color:var(--ink-100);
+  line-height:1.5;
+  font-weight:500;
+}
+.qa-bubble.answered .qa-body{border-color:var(--border-strong);}
+
+.qa-answer-zone{margin-top:14px;}
+.qa-answer-zone textarea{
+  width:100%;
+  background:rgba(0,0,0,0.25);
+  border:1px solid var(--border-soft);
+  border-radius:10px;
+  padding:12px 14px;
+  color:var(--ink-100);
+  font-family:var(--font-body);
+  font-size:14px;
+  min-height:64px;
+  resize:vertical;
+}
+.qa-answer-zone textarea:focus{border-color:var(--gold-dim); outline:none; box-shadow:0 0 0 3px rgba(212,168,67,0.1);}
+.qa-answer-zone .qa-submit-row{
+  margin-top:10px;
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+.qa-your-answer{
+  margin-top:14px;
+  padding:12px 14px;
+  background:rgba(255,255,255,0.03);
+  border-left:3px solid var(--gold-dim);
+  border-radius:0 8px 8px 0;
+  font-size:14px;
+  color:var(--ink-300);
+  line-height:1.5;
+}
+.qa-your-answer .label{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.06em;
+  color:var(--ink-700);
+  display:block;
+  margin-bottom:4px;
+}
+.qa-reaction{
+  margin-top:12px;
+  padding:11px 14px;
+  border-radius:0 8px 8px 0;
+  font-size:13.5px;
+  line-height:1.5;
+  border-left:3px solid;
+  animation:rise .4s ease both;
+}
+.qa-reaction.hot{background:rgba(63,184,138,0.08); border-color:var(--deal-green); color:var(--deal-green-bright);}
+.qa-reaction.cold{background:rgba(232,84,47,0.08); border-color:var(--shark-red); color:var(--shark-red-bright);}
+.qa-reaction.neutral{background:rgba(212,168,67,0.07); border-color:var(--gold-dim); color:var(--gold-bright);}
+
+.qa-progress{
+  text-align:center;
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--ink-700);
+  margin-bottom:18px;
+  letter-spacing:0.05em;
+}
+
+/* ===================== SCORING ===================== */
+.score-hero{
+  text-align:center;
+  margin-bottom:8px;
+}
+.score-ring-wrap{
+  display:flex;
+  justify-content:center;
+  margin-bottom:8px;
+}
+.score-total-num{
+  font-family:var(--font-display);
+  font-size:64px;
+  color:var(--ink-100);
+  line-height:1;
+}
+.score-total-label{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--ink-700);
+}
+.score-bars{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+  max-width:640px;
+  margin:36px auto 0;
+}
+.score-row{display:grid; grid-template-columns:170px 1fr 52px; align-items:center; gap:16px;}
+.score-row .slabel{
+  font-family:var(--font-mono);
+  font-size:12.5px;
+  color:var(--ink-300);
+  text-transform:uppercase;
+  letter-spacing:0.03em;
+}
+.score-row .sbar{
+  height:10px;
+  background:rgba(255,255,255,0.06);
+  border-radius:6px;
+  overflow:hidden;
+}
+.score-row .sbar-fill{
+  height:100%;
+  width:0%;
+  border-radius:6px;
+  background:linear-gradient(90deg, var(--gold-dim), var(--gold-bright));
+  transition:width 1.4s cubic-bezier(.16,.84,.32,1);
+}
+.score-row .sval{
+  font-family:var(--font-mono);
+  font-size:14px;
+  color:var(--ink-100);
+  text-align:right;
+}
+
+/* ===================== DECISION ===================== */
+.verdict-card{
+  border-radius:22px;
+  padding:48px 40px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  border:1px solid var(--border-soft);
+  background:linear-gradient(160deg, var(--bg-card-raised), var(--bg-card));
+}
+.verdict-card.invest{box-shadow:0 0 0 1px rgba(63,184,138,0.3), 0 30px 80px -30px rgba(63,184,138,0.35);}
+.verdict-card.acquire{box-shadow:0 0 0 1px rgba(212,168,67,0.3), 0 30px 80px -30px rgba(212,168,67,0.35);}
+.verdict-card.wait{box-shadow:0 0 0 1px rgba(139,151,165,0.25), 0 30px 80px -30px rgba(139,151,165,0.2);}
+.verdict-card.reject{box-shadow:0 0 0 1px rgba(232,84,47,0.3), 0 30px 80px -30px rgba(232,84,47,0.35);}
+
+.verdict-stamp{
+  font-family:var(--font-display);
+  font-size:clamp(38px,6vw,58px);
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+  margin-bottom:10px;
+  display:inline-block;
+  transform:rotate(-2deg);
+}
+.verdict-card.invest .verdict-stamp{color:var(--deal-green-bright); text-shadow:0 0 40px rgba(63,184,138,0.35);}
+.verdict-card.acquire .verdict-stamp{color:var(--gold-bright); text-shadow:0 0 40px rgba(212,168,67,0.35);}
+.verdict-card.wait .verdict-stamp{color:var(--ink-300); text-shadow:0 0 40px rgba(139,151,165,0.2);}
+.verdict-card.reject .verdict-stamp{color:var(--shark-red-bright); text-shadow:0 0 40px rgba(232,84,47,0.35);}
+
+.verdict-sub{color:var(--ink-500); font-size:15px; margin-bottom:30px;}
+
+.deal-terms{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:30px;
+}
+.deal-chip{
+  background:rgba(0,0,0,0.25);
+  border:1px solid var(--border-strong);
+  border-radius:12px;
+  padding:16px 26px;
+  min-width:160px;
+}
+.deal-chip .dk{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--ink-700);
+  margin-bottom:6px;
+}
+.deal-chip .dv{
+  font-family:var(--font-display);
+  font-size:22px;
+  color:var(--ink-100);
+}
+
+.reasoning-box{
+  text-align:left;
+  max-width:620px;
+  margin:0 auto 30px;
+  background:rgba(0,0,0,0.2);
+  border:1px solid var(--border-soft);
+  border-radius:12px;
+  padding:20px 22px;
+}
+.reasoning-box .rk{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--gold);
+  margin-bottom:10px;
+}
+.reasoning-box ul{list-style:none; display:flex; flex-direction:column; gap:8px;}
+.reasoning-box li{
+  font-size:14px;
+  line-height:1.55;
+  color:var(--ink-300);
+  padding-left:18px;
+  position:relative;
+}
+.reasoning-box li::before{
+  content:'▸';
+  position:absolute; left:0;
+  color:var(--gold-dim);
+}
+
+/* ===================== LEADERBOARD ===================== */
+.lb-table-wrap{
+  background:var(--bg-card);
+  border:1px solid var(--border-soft);
+  border-radius:16px;
+  overflow:hidden;
+}
+.lb-row{
+  display:grid;
+  grid-template-columns:44px 1fr 100px 130px;
+  align-items:center;
+  padding:14px 22px;
+  border-bottom:1px solid var(--border-soft);
+  gap:14px;
+}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.head{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:0.08em;
+  color:var(--ink-700);
+  background:rgba(255,255,255,0.02);
+}
+.lb-row .lb-rank{
+  font-family:var(--font-display);
+  font-size:18px;
+  color:var(--ink-500);
+}
+.lb-row.r1 .lb-rank{color:var(--gold-bright);}
+.lb-row.r2 .lb-rank{color:#cdd6df;}
+.lb-row.r3 .lb-rank{color:#c98a52;}
+.lb-row .lb-name{
+  font-size:14.5px;
+  color:var(--ink-100);
+  font-weight:500;
+}
+.lb-row .lb-name .lb-tag{
+  display:block;
+  font-size:11.5px;
+  color:var(--ink-700);
+  font-weight:400;
+  margin-top:2px;
+}
+.lb-row .lb-score{
+  font-family:var(--font-mono);
+  color:var(--gold-bright);
+  font-size:15px;
+}
+.lb-row .lb-verdict{
+  font-family:var(--font-mono);
+  font-size:11px;
+  text-transform:uppercase;
+  padding:5px 10px;
+  border-radius:20px;
+  text-align:center;
+  letter-spacing:0.04em;
+}
+.lb-verdict.invest{background:rgba(63,184,138,0.12); color:var(--deal-green-bright); border:1px solid rgba(63,184,138,0.3);}
+.lb-verdict.acquire{background:rgba(212,168,67,0.12); color:var(--gold-bright); border:1px solid rgba(212,168,67,0.3);}
+.lb-verdict.wait{background:rgba(139,151,165,0.1); color:var(--ink-300); border:1px solid var(--border-strong);}
+.lb-verdict.reject{background:rgba(232,84,47,0.12); color:var(--shark-red-bright); border:1px solid rgba(232,84,47,0.3);}
+.lb-empty{
+  text-align:center;
+  padding:40px;
+  color:var(--ink-700);
+  font-size:14px;
+}
+
+.bottom-actions{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-top:36px;
+}
+
+.toast{
+  position:fixed;
+  bottom:28px;
+  left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--bg-card-raised);
+  border:1px solid var(--border-strong);
+  color:var(--ink-100);
+  padding:13px 22px;
+  border-radius:10px;
+  font-size:13.5px;
+  font-family:var(--font-mono);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .3s, transform .3s;
+  z-index:10000;
+  box-shadow:0 10px 30px -10px rgba(0,0,0,0.5);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width:880px){
+  .form-grid{grid-template-columns:1fr;}
+  .judge-grid{grid-template-columns:repeat(2,1fr);}
+  .recap-grid{grid-template-columns:1fr;}
+  .score-row{grid-template-columns:120px 1fr 44px; gap:10px;}
+  .lb-row{grid-template-columns:34px 1fr 70px;}
+  .lb-row .lb-verdict{display:none;}
+}
+@media (max-width:540px){
+  .judge-grid{grid-template-columns:repeat(2,1fr); gap:12px;}
+  .judge-card{padding:16px 10px;}
+  .judge-card .emoji{font-size:30px;}
+  .qa-bubble{grid-template-columns:42px 1fr;}
+  .step-pip .label{display:none;}
+  .step-pip{padding:0 8px;}
+  .deal-chip{min-width:130px; padding:12px 18px;}
+  .form-card{padding:24px 18px;}
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <header class="tank-header">
+    <div class="spot"></div>
+    <div class="eyebrow">Season 01 · Episode ∞</div>
+    <h1 class="tank-title">The <em>Tank</em></h1>
+    <p class="tank-sub">Pitch your startup to four AI sharks. Answer their questions. Walk out with a deal — or a lesson.</p>
+  </header>
+
+  <div class="step-rail" id="stepRail"></div>
+
+  <!-- PANEL 1: PITCH FORM -->
+  <section class="panel visible" id="panel-form">
+    <div class="panel-head">
+      <h2>Build Your Pitch</h2>
+      <p>Six questions. Be specific — the sharks can tell when you're winging it.</p>
+    </div>
+    <div class="form-card">
+      <div class="form-grid">
+        <div class="field full">
+          <label for="f-name">Startup Name</label>
+          <input id="f-name" type="text" placeholder="e.g. Nimbus Cart" maxlength="60">
+          <div class="field-error">Give your startup a name.</div>
+        </div>
+        <div class="field full">
+          <label for="f-problem">Problem Statement <span class="hint">— what's broken today?</span></label>
+          <textarea id="f-problem" placeholder="e.g. Small D2C brands lose 30% of orders to cart abandonment because checkout is slow and untrustworthy on mobile."></textarea>
+          <div class="field-error">Tell the sharks what problem you're solving.</div>
+        </div>
+        <div class="field full">
+          <label for="f-solution">Solution <span class="hint">— what do you actually do?</span></label>
+          <textarea id="f-solution" placeholder="e.g. A one-tap checkout widget that auto-fills shipping and payment using device biometrics, cutting checkout time from 90s to 9s."></textarea>
+          <div class="field-error">Describe your solution.</div>
+        </div>
+        <div class="field">
+          <label for="f-revenue">Revenue Model</label>
+          <textarea id="f-revenue" placeholder="e.g. 1.5% transaction fee + $49/mo SaaS tier for analytics."></textarea>
+          <div class="field-error">How do you make money?</div>
+        </div>
+        <div class="field">
+          <label for="f-audience">Target Audience</label>
+          <textarea id="f-audience" placeholder="e.g. D2C Shopify merchants doing $50k–$2M/yr in revenue."></textarea>
+          <div class="field-error">Who is this for?</div>
+        </div>
+        <div class="field full">
+          <label for="f-ask">Funding Ask <span class="hint">— amount for what % equity</span></label>
+          <input id="f-ask" type="text" placeholder="e.g. $250,000 for 8% equity">
+          <div class="field-error">State your ask — amount and equity.</div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="btn-to-pitch">Step Into The Tank →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- PANEL 2: PITCH DISPLAY + JUDGES Q&A -->
+  <section class="panel" id="panel-pitch">
+  </section>
+
+  <!-- PANEL 3: SCORING -->
+  <section class="panel" id="panel-score">
+  </section>
+
+  <!-- PANEL 4: DECISION -->
+  <section class="panel" id="panel-decision">
+  </section>
+
+  <!-- PANEL 5: LEADERBOARD -->
+  <section class="panel" id="panel-leaderboard">
+  </section>
+
+</div>
+
+<canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:9999;display:none;"></canvas>
+
+<script>
+window.STATE = {
+  idea: {},
+  judges: [],
+  qa: [],        // {judgeId, qIndex, question, answer, reaction, mood}
+  scores: {},    // market, innovation, business, execution, investment
+  decision: {},  // verdict, valuation, amount, reasoning
+  leaderboard: []
+};
+
+/* ============================================================
+   JUDGE DEFINITIONS
+   ============================================================ */
+const JUDGES = [
+  {
+    id:'vc',
+    name:'Marcus Steele',
+    title:'The Venture Capitalist',
+    emoji:'🦈',
+    focus:'Market Size & Scale',
+    color:'#5b8def',
+    questions:[
+      (idea)=>`What's the total addressable market for ${idea.name}, and why is it big enough to return a fund?`,
+      (idea)=>`If a well-funded competitor copied "${idea.solution.slice(0,40)}..." next quarter, what stops them from eating your lunch?`
+    ]
+  },
+  {
+    id:'founder',
+    name:'Renee Cho',
+    title:'The Founder',
+    emoji:'🦈',
+    focus:'Execution & Grit',
+    color:'#e8542f',
+    questions:[
+      (idea)=>`Walk me through what you've actually shipped so far for ${idea.name} — not the plan, the reality.`,
+      (idea)=>`What's the single biggest operational risk that could kill this in the next 6 months, and what's your move against it?`
+    ]
+  },
+  {
+    id:'customer',
+    name:'Dev Patel',
+    title:'The Customer',
+    emoji:'🦈',
+    focus:'Real-World Usefulness',
+    color:'#3fb88a',
+    questions:[
+      (idea)=>`Honestly — why would someone in "${idea.audience.slice(0,40)}" switch from what they use today to this?`,
+      (idea)=>`What happens the first time this breaks or disappoints a customer? Will they forgive you?`
+    ]
+  },
+  {
+    id:'angel',
+    name:'Priya Anand',
+    title:'The Angel Investor',
+    emoji:'🦈',
+    focus:'Profitability',
+    color:'#d4a843',
+    questions:[
+      (idea)=>`Break down your unit economics — what does it cost you to acquire and serve one customer under "${idea.revenue.slice(0,40)}"?`,
+      (idea)=>`At what point does ${idea.name} actually turn a profit, and what has to go right to get there?`
+    ]
+  }
+];
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+const $ = (sel,root=document)=>root.querySelector(sel);
+const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+const escapeHtml = (s)=> (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg){
+  let t = $('.toast');
+  if(!t){
+    t = document.createElement('div');
+    t.className='toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+
+function wordCount(str){
+  return (str||'').trim().split(/\s+/).filter(Boolean).length;
+}
+
+// crude relevance: how many distinct meaningful words from the question/idea context
+// appear in the user's answer. Used only to flavor reactions — not a real judge of truth.
+function relevanceScore(answer, contextWords){
+  if(!answer || wordCount(answer) < 3) return 0;
+  const ansWords = new Set(answer.toLowerCase().match(/[a-z0-9]+/g) || []);
+  let hits = 0;
+  contextWords.forEach(w=>{ if(ansWords.has(w)) hits++; });
+  const lengthBonus = Math.min(wordCount(answer)/40, 1); // longer, more substantive answers score a bit higher
+  const specificityBonus = /\$|\d/.test(answer) ? 0.15 : 0; // numbers/figures read as concrete
+  return Math.min(1, (hits/Math.max(3,contextWords.length))*0.6 + lengthBonus*0.3 + specificityBonus);
+}
+
+function extractKeywords(idea){
+  const blob = `${idea.problem} ${idea.solution} ${idea.revenue} ${idea.audience}`.toLowerCase();
+  const stop = new Set(['the','and','for','that','with','this','from','have','will','are','our','your','they','their','a','to','of','in','on','is','it','as','by','an','be','we','or','at']);
+  return Array.from(new Set((blob.match(/[a-z0-9]+/g)||[]).filter(w=>w.length>3 && !stop.has(w))));
+}
+
+/* ============================================================
+   STEP RAIL
+   ============================================================ */
+const STEPS = [
+  {id:'form', label:'Pitch'},
+  {id:'pitch', label:'The Tank'},
+  {id:'score', label:'Scoring'},
+  {id:'decision', label:'Decision'},
+  {id:'leaderboard', label:'Leaderboard'}
+];
+let currentStepIndex = 0;
+
+function renderStepRail(){
+  const rail = $('#stepRail');
+  rail.innerHTML = STEPS.map((s,i)=>{
+    const cls = i===currentStepIndex ? 'active' : (i<currentStepIndex ? 'done' : '');
+    const divider = i < STEPS.length-1 ? '<div class="rail-line"></div>' : '';
+    return `<div class="step-pip ${cls}"><div class="num">${i<currentStepIndex?'✓':i+1}</div><span class="label">${s.label}</span></div>${divider}`;
+  }).join('');
+}
+
+function goToStep(index){
+  currentStepIndex = index;
+  renderStepRail();
+  STEPS.forEach((s,i)=>{
+    const panel = $('#panel-'+s.id);
+    if(panel) panel.classList.toggle('visible', i===index);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+renderStepRail();
+
+/* ============================================================
+   FORM VALIDATION + SUBMIT
+   ============================================================ */
+const FORM_FIELDS = [
+  {id:'f-name', key:'name'},
+  {id:'f-problem', key:'problem'},
+  {id:'f-solution', key:'solution'},
+  {id:'f-revenue', key:'revenue'},
+  {id:'f-audience', key:'audience'},
+  {id:'f-ask', key:'ask'}
+];
+
+function validateForm(){
+  let valid = true;
+  FORM_FIELDS.forEach(f=>{
+    const el = $('#'+f.id);
+    const field = el.closest('.field');
+    const ok = el.value.trim().length > 1;
+    field.classList.toggle('invalid', !ok);
+    if(!ok) valid = false;
+  });
+  return valid;
+}
+
+FORM_FIELDS.forEach(f=>{
+  $('#'+f.id).addEventListener('input', ()=>{
+    $('#'+f.id).closest('.field').classList.remove('invalid');
+  });
+});
+
+/* ============================================================
+   PANEL 2: PITCH + Q&A
+   ============================================================ */
+let qaQueue = [];   // flattened list of {judge, qIndex, question}
+let qaPointer = 0;
+
+function buildPitchPanel(){
+  const idea = STATE.idea;
+  const panel = $('#panel-pitch');
+
+  panel.innerHTML = `
+    <div class="panel-head">
+      <h2>Welcome to the Tank</h2>
+      <p>Four sharks. Eight questions. No mercy.</p>
+    </div>
+
+    <div class="pitch-recap">
+      <div class="recap-name">${escapeHtml(idea.name)} <span class="ask-tag">Asking ${escapeHtml(idea.ask)}</span></div>
+      <div class="recap-grid">
+        <div class="recap-item"><div class="k">Problem</div><div class="v">${escapeHtml(idea.problem)}</div></div>
+        <div class="recap-item"><div class="k">Solution</div><div class="v">${escapeHtml(idea.solution)}</div></div>
+        <div class="recap-item"><div class="k">Revenue Model</div><div class="v">${escapeHtml(idea.revenue)}</div></div>
+        <div class="recap-item"><div class="k">Target Audience</div><div class="v">${escapeHtml(idea.audience)}</div></div>
+      </div>
+    </div>
+
+    <div class="judge-grid" id="judgeGrid"></div>
+
+    <div class="qa-progress" id="qaProgress"></div>
+    <div class="qa-thread" id="qaThread"></div>
+
+    <div class="btn-row" id="pitchActions" style="display:none;">
+      <button class="btn btn-primary" id="btn-to-score">See My Scores →</button>
+    </div>
+  `;
+
+  renderJudgeGrid();
+
+  // build question queue: round-robin so it feels like a real panel (Q1 of each judge, then Q2 of each)
+  qaQueue = [];
+  for(let qi=0; qi<2; qi++){
+    STATE.judges.forEach(j=>{
+      qaQueue.push({judge:j, qIndex:qi, question:j.questions[qi](idea)});
+    });
+  }
+  qaPointer = 0;
+  renderQaProgress();
+  askNextQuestion();
+}
+
+function renderJudgeGrid(){
+  const grid = $('#judgeGrid');
+  grid.innerHTML = STATE.judges.map(j=>`
+    <div class="judge-card" data-judge="${j.id}" data-mood="${j.mood}">
+      <span class="emoji">${j.emoji}</span>
+      <div class="jname">${j.name}</div>
+      <div class="jfocus">${j.title}</div>
+      <div class="jmeter"><div class="jmeter-fill" style="width:${j.meter}%"></div></div>
+      <div class="jstatus">${j.statusText||''}</div>
+    </div>
+  `).join('');
+}
+
+function updateJudgeMood(judgeId, mood, statusText){
+  const j = STATE.judges.find(x=>x.id===judgeId);
+  if(!j) return;
+  j.mood = mood;
+  j.statusText = statusText;
+  if(mood==='hot') j.meter = Math.min(100, j.meter + 14);
+  else if(mood==='cold') j.meter = Math.max(0, j.meter - 14);
+  else j.meter = j.meter + (Math.random()>0.5?2:-2);
+  const card = $(`.judge-card[data-judge="${judgeId}"]`);
+  if(card){
+    card.dataset.mood = mood;
+    card.querySelector('.jmeter-fill').style.width = j.meter+'%';
+    card.querySelector('.jstatus').textContent = statusText||'';
+  }
+}
+
+function renderQaProgress(){
+  const done = qaPointer;
+  const total = qaQueue.length;
+  $('#qaProgress').textContent = done < total
+    ? `QUESTION ${done+1} OF ${total}`
+    : `ALL QUESTIONS ANSWERED — ${total}/${total}`;
+}
+
+function askNextQuestion(){
+  if(qaPointer >= qaQueue.length){
+    $('#pitchActions').style.display = 'flex';
+    toast('The sharks have heard enough. Time for scores.');
+    return;
+  }
+  const item = qaQueue[qaPointer];
+  const thread = $('#qaThread');
+  const bubbleId = `qa-bubble-${qaPointer}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'qa-bubble';
+  bubble.id = bubbleId;
+  bubble.innerHTML = `
+    <div class="qa-avatar">${item.judge.emoji}</div>
+    <div class="qa-body">
+      <div class="qa-who">${item.judge.name} <span style="color:var(--ink-700);">· ${item.judge.title}</span></div>
+      <div class="qa-question">${escapeHtml(item.question)}</div>
+      <div class="qa-answer-zone">
+        <textarea placeholder="Answer ${item.judge.name}'s question..." id="answer-${qaPointer}"></textarea>
+        <div class="qa-submit-row">
+          <button class="btn btn-ghost btn-sm" data-action="skip" data-idx="${qaPointer}">Pass on this one</button>
+          <button class="btn btn-primary btn-sm" data-action="answer" data-idx="${qaPointer}">Respond</button>
+        </div>
+      </div>
+    </div>
+  `;
+  thread.appendChild(bubble);
+  bubble.scrollIntoView({behavior:'smooth', block:'center'});
+
+  const textarea = $('#answer-'+qaPointer);
+  textarea.focus();
+
+  bubble.querySelector('[data-action="answer"]').addEventListener('click', ()=>submitAnswer(qaPointer, textarea.value, bubbleId));
+  bubble.querySelector('[data-action="skip"]').addEventListener('click', ()=>submitAnswer(qaPointer, '', bubbleId, true));
+  textarea.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ submitAnswer(qaPointer, textarea.value, bubbleId); }
+  });
+}
+
+const REACTIONS = {
+  hot:[
+    "Now that's the kind of answer I want to hear. Concrete, confident, convincing.",
+    "Okay — that actually moved the needle for me.",
+    "That's a sharp answer. You clearly know this number cold.",
+    "I like that. Most founders fumble this question."
+  ],
+  neutral:[
+    "Reasonable answer. I need more before I'm sold, though.",
+    "Fair point — but I've heard versions of this from founders who didn't deliver.",
+    "Okay, noted. That's table stakes, not a differentiator.",
+    "That's a start. I'll want to see this proven, not pitched."
+  ],
+  cold:[
+    "That's vague. I asked a specific question and got a brochure answer.",
+    "Hmm. That tells me you haven't stress-tested this yet.",
+    "I'm not convinced — that sounded like you're guessing.",
+    "That answer worries me more than it reassures me."
+  ]
+};
+
+function submitAnswer(idx, answerText, bubbleId, skipped=false){
+  const item = qaQueue[idx];
+  const bubble = $('#'+bubbleId);
+  if(!bubble || bubble.dataset.locked) return;
+  bubble.dataset.locked = 'true';
+
+  const keywords = extractKeywords(STATE.idea);
+  const rel = skipped ? 0 : relevanceScore(answerText, keywords);
+
+  let mood, reactionPool;
+  if(skipped || rel < 0.18){ mood='cold'; reactionPool=REACTIONS.cold; }
+  else if(rel < 0.45){ mood='neutral'; reactionPool=REACTIONS.neutral; }
+  else { mood='hot'; reactionPool=REACTIONS.hot; }
+
+  const statusMap = {hot:'Impressed', neutral:'Listening', cold:'Skeptical'};
+  updateJudgeMood(item.judge.id, mood, statusMap[mood]);
+
+  const reactionText = reactionPool[Math.floor(Math.random()*reactionPool.length)];
+
+  const answerZone = bubble.querySelector('.qa-answer-zone');
+  answerZone.innerHTML = `
+    <div class="qa-your-answer"><span class="label">Your Answer</span>${skipped ? '<em style="color:var(--ink-700);">— passed —</em>' : escapeHtml(answerText)}</div>
+    <div class="qa-reaction ${mood}">${item.judge.emoji} <strong>${item.judge.name}:</strong> ${reactionText}</div>
+  `;
+  bubble.classList.add('answered');
+
+  STATE.qa.push({
+    judgeId:item.judge.id,
+    judgeName:item.judge.name,
+    qIndex:item.qIndex,
+    question:item.question,
+    answer: skipped ? '(passed)' : answerText,
+    mood, reactionText
+  });
+
+  qaPointer++;
+  renderQaProgress();
+  setTimeout(askNextQuestion, 550);
+}
+
+$('#panel-pitch').addEventListener('click', (e)=>{
+  if(e.target && e.target.id === 'btn-to-score'){
+    runScoringEngine();
+    goToStep(2);
+  }
+});
+
+/* ============================================================
+   SCORING ENGINE
+   ============================================================ */
+function runScoringEngine(){
+  const idea = STATE.idea;
+
+  // Base signal from richness of the idea's own text (length + specificity)
+  const textBlob = `${idea.problem} ${idea.solution} ${idea.revenue} ${idea.audience}`;
+  const richness = Math.min(1, wordCount(textBlob)/90);
+  const hasNumbers = /\$|\d/.test(idea.revenue) || /\d/.test(idea.ask);
+  const askNum = parseAskAmount(idea.ask);
+
+  // Signal from Q&A performance
+  const hotCount = STATE.qa.filter(q=>q.mood==='hot').length;
+  const coldCount = STATE.qa.filter(q=>q.mood==='cold').length;
+  const total = STATE.qa.length || 1;
+  const qaPositivity = (hotCount - coldCount) / total; // -1 to 1
+
+  // helper to build a 0-100 score from a base + qa influence + noise, judge-weighted
+  function scoreFor(base, judgeIds, weight=10){
+    const judgeQa = STATE.qa.filter(q=>judgeIds.includes(q.judgeId));
+    const jHot = judgeQa.filter(q=>q.mood==='hot').length;
+    const jCold = judgeQa.filter(q=>q.mood==='cold').length;
+    const jSignal = judgeQa.length ? (jHot - jCold)/judgeQa.length : 0;
+    let s = base + jSignal*weight + qaPositivity*8;
+    s = Math.max(8, Math.min(98, Math.round(s)));
+    return s;
+  }
+
+  const marketBase = 48 + richness*22 + (idea.audience.length>20?6:0);
+  const innovationBase = 50 + richness*18 + (idea.solution.toLowerCase().includes('ai')?4:0);
+  const businessBase = 46 + (hasNumbers?14:0) + richness*12;
+  const executionBase = 50 + richness*10;
+  const investBase = 45 + (hasNumbers?10:0) + richness*14 + (askNum && askNum<2000000 ? 4:0);
+
+  STATE.scores = {
+    market: scoreFor(marketBase, ['vc'], 12),
+    innovation: scoreFor(innovationBase, ['founder','customer'], 9),
+    business: scoreFor(businessBase, ['angel'], 13),
+    execution: scoreFor(executionBase, ['founder'], 14),
+    investment: scoreFor(investBase, ['vc','angel'], 10)
+  };
+
+  renderScorePanel();
+}
+
+function parseAskAmount(askStr){
+  const m = (askStr||'').replace(/,/g,'').match(/\$?\s?([\d.]+)\s?(k|m|million|thousand)?/i);
+  if(!m) return null;
+  let n = parseFloat(m[1]);
+  const unit = (m[2]||'').toLowerCase();
+  if(unit==='k' || unit==='thousand') n *= 1000;
+  if(unit==='m' || unit==='million') n *= 1000000;
+  return n;
+}
+
+function parseEquityPercent(askStr){
+  const m = (askStr||'').match(/([\d.]+)\s?%/);
+  return m ? parseFloat(m[1]) : null;
+}
+
+function renderScorePanel(){
+  const s = STATE.scores;
+  const labels = [
+    {key:'market', label:'Market Potential'},
+    {key:'innovation', label:'Innovation'},
+    {key:'business', label:'Business Model'},
+    {key:'execution', label:'Execution'},
+    {key:'investment', label:'Investment Worthiness'}
+  ];
+  const overall = Math.round(Object.values(s).reduce((a,b)=>a+b,0)/Object.values(s).length);
+  STATE.scores.overall = overall;
+
+  const panel = $('#panel-score');
+  panel.innerHTML = `
+    <div class="panel-head">
+      <h2>The Scorecard</h2>
+      <p>Five metrics. One number that decides everything.</p>
+    </div>
+    <div class="score-hero">
+      <div class="score-total-num" id="scoreTotalNum">0</div>
+      <div class="score-total-label">Overall Pitch Score / 100</div>
+    </div>
+    <div class="score-bars">
+      ${labels.map(l=>`
+        <div class="score-row">
+          <div class="slabel">${l.label}</div>
+          <div class="sbar"><div class="sbar-fill" data-target="${s[l.key]}" id="bar-${l.key}"></div></div>
+          <div class="sval" id="val-${l.key}">0</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="btn-row" style="margin-top:40px;">
+      <button class="btn btn-primary" id="btn-to-decision">Reveal The Decision →</button>
+    </div>
+  `;
+
+  // animate
+  requestAnimationFrame(()=>{
+    let displayed = 0;
+    const dur = 1200, start = performance.now();
+    function tick(now){
+      const p = Math.min(1, (now-start)/dur);
+      const eased = 1 - Math.pow(1-p, 3);
+      $('#scoreTotalNum').textContent = Math.round(overall*eased);
+      if(p<1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    labels.forEach(l=>{
+      const bar = $('#bar-'+l.key);
+      bar.style.width = s[l.key]+'%';
+      const valEl = $('#val-'+l.key);
+      let d2=0; const dur2=1200, start2=performance.now();
+      function tick2(now){
+        const p = Math.min(1,(now-start2)/dur2);
+        const eased = 1-Math.pow(1-p,3);
+        valEl.textContent = Math.round(s[l.key]*eased);
+        if(p<1) requestAnimationFrame(tick2);
+      }
+      requestAnimationFrame(tick2);
+    });
+  });
+
+  $('#btn-to-decision').onclick = ()=>{
+    runDecisionEngine();
+    goToStep(3);
+  };
+}
+
+/* ============================================================
+   DECISION ENGINE
+   ============================================================ */
+function runDecisionEngine(){
+  const s = STATE.scores;
+  const idea = STATE.idea;
+  const overall = s.overall;
+
+  let verdict, verdictLabel;
+  if(overall >= 78){ verdict='invest'; verdictLabel="WE'RE IN"; }
+  else if(overall >= 62){ verdict='acquire'; verdictLabel="WE WANT TO ACQUIRE THIS"; }
+  else if(overall >= 45){ verdict='wait'; verdictLabel="COME BACK LATER"; }
+  else { verdict='reject'; verdictLabel="I'M OUT"; }
+
+  const askAmount = parseAskAmount(idea.ask) || 250000;
+  const askEquity = parseEquityPercent(idea.ask) || 10;
+  const impliedValuation = Math.round(askAmount / (askEquity/100));
+
+  let finalValuation, finalAmount, finalEquity;
+
+  if(verdict==='invest'){
+    // sharks pay close to ask, sometimes a premium for high scores
+    const premium = overall >= 90 ? 1.15 : 1.0;
+    finalValuation = Math.round(impliedValuation * premium / 1000) * 1000;
+    finalAmount = askAmount;
+    finalEquity = Math.round((finalAmount/finalValuation)*1000)/10;
+  } else if(verdict==='acquire'){
+    // lower valuation, want more equity for the risk
+    finalValuation = Math.round(impliedValuation * 0.7 / 1000) * 1000;
+    finalEquity = Math.min(35, Math.round(askEquity * 1.6 *10)/10);
+    finalAmount = Math.round(finalValuation * (finalEquity/100));
+  } else if(verdict==='wait'){
+    finalValuation = impliedValuation;
+    finalAmount = 0;
+    finalEquity = 0;
+  } else {
+    finalValuation = 0;
+    finalAmount = 0;
+    finalEquity = 0;
+  }
+
+  const reasoning = buildReasoning(verdict, s, idea);
+
+  STATE.decision = {
+    verdict, verdictLabel, finalValuation, finalAmount, finalEquity,
+    askAmount, askEquity, reasoning
+  };
+
+  renderDecisionPanel();
+  if(verdict==='invest' || verdict==='acquire'){
+    fireConfetti();
+  }
+  saveToLeaderboard();
+}
+
+function buildReasoning(verdict, s, idea){
+  const lines = [];
+  const top = Object.entries({market:'market potential',innovation:'innovation',business:'business model',execution:'execution',investment:'investment worthiness'})
+    .sort((a,b)=>s[b[0]]-s[a[0]]);
+  const strongest = top[0], weakest = top[top.length-1];
+
+  lines.push(`Strongest signal: ${strongest[1]} scored ${s[strongest[0]]}/100 — that's what kept the sharks leaning in.`);
+  lines.push(`Weakest signal: ${weakest[1]} scored ${s[weakest[0]]}/100 — that's the gap that worried the panel most.`);
+
+  const hot = STATE.qa.filter(q=>q.mood==='hot').length;
+  const cold = STATE.qa.filter(q=>q.mood==='cold').length;
+  lines.push(`Q&A round: ${hot} confident answers, ${cold} shaky ones, out of ${STATE.qa.length} questions asked.`);
+
+  if(verdict==='invest'){
+    lines.push(`Overall score of ${s.overall}/100 cleared the panel's investment bar — the sharks see a fundable business, not just an idea.`);
+  } else if(verdict==='acquire'){
+    lines.push(`The panel sees more value in owning ${idea.name} outright than in betting on you to scale it solo — hence the acquisition lean and tighter terms.`);
+  } else if(verdict==='wait'){
+    lines.push(`The core idea has merit, but ${weakest[1]} needs real proof points before money moves. Come back with traction.`);
+  } else {
+    lines.push(`Too many open questions across multiple judges — the risk-to-reward ratio doesn't clear the bar today.`);
+  }
+  return lines;
+}
+
+function renderDecisionPanel(){
+  const d = STATE.decision;
+  const idea = STATE.idea;
+  const panel = $('#panel-decision');
+
+  const showTerms = d.verdict==='invest' || d.verdict==='acquire';
+
+  panel.innerHTML = `
+    <div class="panel-head">
+      <h2>The Verdict</h2>
+      <p>This is the moment.</p>
+    </div>
+    <div class="verdict-card ${d.verdict}">
+      <div class="verdict-stamp">${d.verdictLabel}</div>
+      <div class="verdict-sub">${escapeHtml(idea.name)} — Overall Score ${STATE.scores.overall}/100</div>
+
+      ${showTerms ? `
+      <div class="deal-terms">
+        <div class="deal-chip"><div class="dk">Suggested Valuation</div><div class="dv">$${fmtMoney(d.finalValuation)}</div></div>
+        <div class="deal-chip"><div class="dk">Funding Amount</div><div class="dv">$${fmtMoney(d.finalAmount)}</div></div>
+        <div class="deal-chip"><div class="dk">Equity Stake</div><div class="dv">${d.finalEquity}%</div></div>
+      </div>` : `
+      <div class="deal-terms">
+        <div class="deal-chip"><div class="dk">${d.verdict==='wait' ? 'Implied Valuation' : 'Funding Amount'}</div><div class="dv">${d.verdict==='wait' ? '$'+fmtMoney(d.finalValuation) : '$0'}</div></div>
+      </div>`}
+
+      <div class="reasoning-box">
+        <div class="rk">Why the panel decided this</div>
+        <ul>${d.reasoning.map(r=>`<li>${escapeHtml(r)}</li>`).join('')}</ul>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-download-pdf">⬇ Download Pitch Report</button>
+        <button class="btn btn-green" id="btn-share">↗ Share Result</button>
+        <button class="btn btn-ghost" id="btn-to-leaderboard">View Leaderboard →</button>
+      </div>
+    </div>
+  `;
+
+  $('#btn-download-pdf').onclick = downloadPitchReportPDF;
+  $('#btn-share').onclick = shareResult;
+  $('#btn-to-leaderboard').onclick = ()=>{
+    renderLeaderboardPanel();
+    goToStep(4);
+  };
+}
+
+function fmtMoney(n){
+  if(!n) return '0';
+  return Math.round(n).toLocaleString('en-US');
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function fireConfetti(){
+  const canvas = $('#confettiCanvas');
+  canvas.style.display = 'block';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+  const colors = ['#d4a843','#f0c668','#3fb88a','#56d9a8','#e8542f'];
+  const pieces = Array.from({length:140}, ()=>({
+    x: Math.random()*canvas.width,
+    y: -20 - Math.random()*canvas.height*0.4,
+    w: 6+Math.random()*6,
+    h: 8+Math.random()*10,
+    color: colors[Math.floor(Math.random()*colors.length)],
+    speed: 2+Math.random()*3.5,
+    drift: (Math.random()-0.5)*2.5,
+    rot: Math.random()*360,
+    rotSpeed: (Math.random()-0.5)*10
+  }));
+  let frame = 0;
+  const maxFrames = 260;
+
+  function draw(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    pieces.forEach(p=>{
+      p.y += p.speed;
+      p.x += p.drift;
+      p.rot += p.rotSpeed;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    if(frame < maxFrames){
+      requestAnimationFrame(draw);
+    } else {
+      canvas.style.display='none';
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+  }
+  draw();
+}
+
+/* ============================================================
+   LEADERBOARD (in-memory, this session)
+   ============================================================ */
+function saveToLeaderboard(){
+  STATE.leaderboard.push({
+    name: STATE.idea.name,
+    ask: STATE.idea.ask,
+    overall: STATE.scores.overall,
+    verdict: STATE.decision.verdict,
+    valuation: STATE.decision.finalValuation,
+    amount: STATE.decision.finalAmount,
+    ts: Date.now()
+  });
+  STATE.leaderboard.sort((a,b)=>b.overall-a.overall);
+}
+
+function renderLeaderboardPanel(){
+  const panel = $('#panel-leaderboard');
+  const rows = STATE.leaderboard;
+
+  panel.innerHTML = `
+    <div class="panel-head">
+      <h2>Tank Leaderboard</h2>
+      <p>Every pitch this session, ranked by overall score.</p>
+    </div>
+    <div class="lb-table-wrap">
+      <div class="lb-row head">
+        <div>#</div><div>Startup</div><div>Score</div><div>Verdict</div>
+      </div>
+      ${rows.length===0 ? `<div class="lb-empty">No pitches yet this session.</div>` : rows.map((r,i)=>`
+        <div class="lb-row ${i===0?'r1':i===1?'r2':i===2?'r3':''}">
+          <div class="lb-rank">${i+1}</div>
+          <div class="lb-name">${escapeHtml(r.name)}<span class="lb-tag">Asked ${escapeHtml(r.ask)}</span></div>
+          <div class="lb-score">${r.overall}</div>
+          <div class="lb-verdict ${r.verdict}">${r.verdict}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="bottom-actions">
+      <button class="btn btn-primary" id="btn-pitch-again">Pitch Another Idea →</button>
+    </div>
+  `;
+
+  $('#btn-pitch-again').onclick = resetToForm;
+}
+
+function resetToForm(){
+  FORM_FIELDS.forEach(f=>{ $('#'+f.id).value=''; $('#'+f.id).closest('.field').classList.remove('invalid'); });
+  STATE.idea = {}; STATE.judges = []; STATE.qa = []; STATE.scores = {}; STATE.decision = {};
+  goToStep(0);
+}
+
+/* ============================================================
+   SHARE RESULT
+   ============================================================ */
+function shareResult(){
+  const idea = STATE.idea, d = STATE.decision, s = STATE.scores;
+  const verdictText = {invest:"got funded", acquire:"got an acquisition offer", wait:"got a 'come back later'", reject:"got rejected"}[d.verdict];
+  const text = `I just pitched "${idea.name}" in The Tank AI Shark Simulator and ${verdictText} with an overall score of ${s.overall}/100${(d.verdict==='invest'||d.verdict==='acquire') ? ` — $${fmtMoney(d.finalAmount)} at a $${fmtMoney(d.finalValuation)} valuation!` : '.'}`;
+
+  if(navigator.share){
+    navigator.share({title:'The Tank — My Pitch Result', text}).catch(()=>{});
+  } else if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(()=>toast('Result copied to clipboard!'));
+  } else {
+    toast(text);
+  }
+}
+
+/* ============================================================
+   PDF REPORT
+   ============================================================ */
+function downloadPitchReportPDF(){
+  if(!window.jspdf){ toast('PDF library failed to load.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'letter'});
+  const idea = STATE.idea, s = STATE.scores, d = STATE.decision;
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 54;
+  let y = 60;
+
+  // gold accent bar
+  doc.setFillColor(212,168,67);
+  doc.rect(0,0,pageW,8,'F');
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(22);
+  doc.setTextColor(20,20,20);
+  doc.text('THE TANK — PITCH REPORT', margin, y);
+  y += 22;
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(90,90,90);
+  doc.text(`Generated ${new Date().toLocaleString()}`, margin, y);
+  y += 30;
+
+  function sectionTitle(t){
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(20,20,20);
+    doc.text(t, margin, y);
+    y += 6;
+    doc.setDrawColor(212,168,67);
+    doc.setLineWidth(1.2);
+    doc.line(margin, y, pageW-margin, y);
+    y += 16;
+  }
+  function wrapText(text, x, maxWidth, lineHeight){
+    const lines = doc.splitTextToSize(text, maxWidth);
+    lines.forEach(line=>{
+      if(y > 740){ doc.addPage(); y = 50; }
+      doc.text(line, x, y);
+      y += lineHeight;
+    });
+  }
+
+  doc.setFontSize(18);
+  doc.setFont('helvetica','bold');
+  doc.setTextColor(20,20,20);
+  doc.text(idea.name || 'Untitled Startup', margin, y);
+  y += 18;
+  doc.setFontSize(11);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(60,60,60);
+  doc.text(`Funding Ask: ${idea.ask}`, margin, y);
+  y += 26;
+
+  sectionTitle('THE PITCH');
+  doc.setFontSize(10.5);
+  doc.setTextColor(40,40,40);
+  [['Problem', idea.problem],['Solution', idea.solution],['Revenue Model', idea.revenue],['Target Audience', idea.audience]].forEach(([label, val])=>{
+    doc.setFont('helvetica','bold');
+    doc.text(label+':', margin, y);
+    y += 14;
+    doc.setFont('helvetica','normal');
+    wrapText(val, margin, pageW - margin*2, 13);
+    y += 8;
+  });
+
+  y += 6;
+  sectionTitle('JUDGE Q&A');
+  STATE.qa.forEach(q=>{
+    if(y>700){ doc.addPage(); y=50; }
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(20,20,20);
+    wrapText(`${q.judgeName}: ${q.question}`, margin, pageW-margin*2, 13);
+    doc.setFont('helvetica','italic');
+    doc.setTextColor(80,80,80);
+    wrapText(`Answer: ${q.answer}`, margin, pageW-margin*2, 13);
+    doc.setFont('helvetica','normal');
+    doc.setTextColor(120,120,120);
+    wrapText(`Reaction (${q.mood}): ${q.reactionText}`, margin, pageW-margin*2, 13);
+    y += 8;
+  });
+
+  if(y>650){ doc.addPage(); y=50; }
+  sectionTitle('SCORECARD');
+  doc.setFontSize(10.5);
+  doc.setTextColor(40,40,40);
+  [['Market Potential', s.market],['Innovation', s.innovation],['Business Model', s.business],['Execution', s.execution],['Investment Worthiness', s.investment],['Overall Score', s.overall]].forEach(([label,val])=>{
+    doc.setFont('helvetica','normal');
+    doc.text(`${label}`, margin, y);
+    doc.setFont('helvetica','bold');
+    doc.text(`${val} / 100`, pageW-margin-60, y);
+    y += 16;
+  });
+
+  y += 10;
+  if(y>650){ doc.addPage(); y=50; }
+  sectionTitle('DECISION');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.setTextColor(20,20,20);
+  doc.text(d.verdictLabel, margin, y);
+  y += 20;
+  doc.setFontSize(10.5);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(40,40,40);
+  if(d.verdict==='invest' || d.verdict==='acquire'){
+    doc.text(`Suggested Valuation: $${fmtMoney(d.finalValuation)}`, margin, y); y+=14;
+    doc.text(`Funding Amount: $${fmtMoney(d.finalAmount)}`, margin, y); y+=14;
+    doc.text(`Equity Stake: ${d.finalEquity}%`, margin, y); y+=18;
+  }
+  d.reasoning.forEach(r=>{
+    wrapText('• '+r, margin, pageW-margin*2, 13);
+  });
+
+  doc.save(`${(idea.name||'pitch').replace(/[^a-z0-9]+/gi,'_')}_TankReport.pdf`);
+  toast('Pitch report downloaded.');
+}
+</script>
+</body>
+</html>
