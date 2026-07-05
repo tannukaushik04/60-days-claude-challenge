@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧩 Prompt Puzzle — Master AI Prompting Through Play</title>
+<style>
+  :root{
+    --bg1:#0b0f1a; --bg2:#131a2b; --card:#161f33; --card2:#1c2740;
+    --accent:#7c5cff; --accent2:#4fd1c5; --warn:#ff6b6b; --gold:#ffd166;
+    --text:#eef1f8; --sub:#9aa5c0; --good:#48d597; --bad:#ff6b6b;
+    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;
+    background:radial-gradient(circle at 20% -10%, #21294a 0%, var(--bg1) 45%) fixed,
+               linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--text); min-height:100vh; overflow-x:hidden;
+  }
+  #app{max-width:1100px;margin:0 auto;padding:24px 18px 80px;}
+  .header{
+    text-align:center; padding:28px 10px 10px;
+  }
+  .header h1{
+    font-size:2rem; margin:0; background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent; letter-spacing:.5px;
+  }
+  .header p{color:var(--sub); margin:6px 0 0;}
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:24px; margin:18px 0; position:relative; overflow:hidden;
+  }
+  .card::before{
+    content:""; position:absolute; top:-40%; right:-20%; width:300px; height:300px;
+    background:radial-gradient(circle, rgba(124,92,255,.15), transparent 70%);
+    pointer-events:none;
+  }
+  .btn{
+    background:linear-gradient(135deg,var(--accent),#5b3df0);
+    color:#fff; border:none; padding:12px 22px; border-radius:10px;
+    font-size:.95rem; font-weight:600; cursor:pointer; transition:.2s transform,.2s box-shadow;
+    box-shadow:0 4px 14px rgba(124,92,255,.35);
+  }
+  .btn:hover{transform:translateY(-2px); box-shadow:0 8px 22px rgba(124,92,255,.5);}
+  .btn.secondary{background:linear-gradient(135deg,#2a3654,#1c2740); box-shadow:none;}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.2); box-shadow:none;}
+  .btn:disabled{opacity:.4; cursor:not-allowed; transform:none;}
+  select, .opt-grid{width:100%;}
+  .opt-grid{display:grid; gap:12px; grid-template-columns:1fr 1fr;}
+  @media(max-width:640px){.opt-grid{grid-template-columns:1fr;}}
+  .opt{
+    background:var(--card2); border:2px solid rgba(255,255,255,.08); border-radius:12px;
+    padding:16px; cursor:pointer; transition:.15s; font-weight:600; text-align:center;
+  }
+  .opt:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .opt.selected{border-color:var(--accent2); background:rgba(79,209,197,.12);}
+  .topbar{display:flex; flex-wrap:wrap; gap:10px; justify-content:space-between; align-items:center;}
+  .stats{display:flex; gap:14px; flex-wrap:wrap;}
+  .stat{
+    background:rgba(255,255,255,.05); padding:8px 14px; border-radius:10px; font-size:.82rem;
+    color:var(--sub); display:flex; gap:6px; align-items:center;
+  }
+  .stat b{color:var(--text);}
+  .progress-wrap{height:8px; background:rgba(255,255,255,.08); border-radius:6px; overflow:hidden; margin:14px 0;}
+  .progress-bar{height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:width .4s;}
+  h2.section{font-size:1.15rem; margin:0 0 4px; color:var(--text);}
+  .badge{
+    display:inline-block; padding:4px 10px; border-radius:20px; font-size:.72rem; font-weight:700;
+    text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;
+  }
+  .badge.build{background:rgba(124,92,255,.2); color:#c3b6ff;}
+  .badge.clean{background:rgba(255,209,102,.2); color:#ffe0a3;}
+  .badge.choose{background:rgba(79,209,197,.2); color:#a3f0e8;}
+  .desired{
+    background:rgba(255,255,255,.04); border-left:3px solid var(--accent2);
+    padding:12px 16px; border-radius:8px; margin:12px 0; font-size:.92rem; color:var(--sub);
+  }
+  .desired b{color:var(--text);}
+  .blockzone{
+    display:flex; flex-wrap:wrap; gap:10px; min-height:64px; padding:12px;
+    background:rgba(255,255,255,.03); border:2px dashed rgba(255,255,255,.15); border-radius:12px;
+    margin:10px 0;
+  }
+  .block{
+    background:linear-gradient(135deg,#26314f,#1c2740); border:1px solid rgba(255,255,255,.12);
+    padding:10px 14px; border-radius:10px; cursor:grab; font-size:.85rem; user-select:none;
+    transition:.15s; box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .block:hover{border-color:var(--accent); transform:translateY(-2px);}
+  .block.dragging{opacity:.4;}
+  .block.placed{cursor:default;}
+  .zone-label{font-size:.72rem; text-transform:uppercase; letter-spacing:.6px; color:var(--sub); margin-bottom:6px;}
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;}
+  .promptbox{
+    background:#0d1220; border:1px solid rgba(255,255,255,.08); border-radius:10px;
+    padding:14px 16px; font-family:'Consolas',monospace; font-size:.85rem; line-height:1.5;
+    white-space:pre-wrap; color:#d7dcf0; margin:10px 0;
+  }
+  .removable{position:relative;}
+  .removable .x{
+    position:absolute; top:-8px; right:-8px; background:var(--bad); color:#fff; border-radius:50%;
+    width:18px; height:18px; font-size:.7rem; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-weight:700;
+  }
+  .toast{
+    position:fixed; top:20px; right:20px; background:var(--card2); border:1px solid rgba(255,255,255,.12);
+    padding:14px 20px; border-radius:12px; box-shadow:var(--shadow); z-index:999;
+    animation:slidein .3s, fadeout .5s 2.5s forwards; max-width:320px; font-size:.88rem;
+  }
+  @keyframes slidein{from{transform:translateX(120%);opacity:0;}to{transform:translateX(0);opacity:1;}}
+  @keyframes fadeout{to{opacity:0; transform:translateY(-10px);}}
+  .toast.good{border-left:4px solid var(--good);}
+  .toast.bad{border-left:4px solid var(--bad);}
+  .toast.info{border-left:4px solid var(--accent2);}
+  .clean-line{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; margin:6px 0;
+    background:rgba(255,255,255,.04); border-radius:10px; border:1px solid rgba(255,255,255,.06);
+    cursor:pointer; transition:.15s;
+  }
+  .clean-line:hover{border-color:var(--accent);}
+  .clean-line.marked-bad{border-color:var(--bad); background:rgba(255,107,107,.08); text-decoration:line-through; opacity:.7;}
+  .clean-line .tag{font-size:.7rem; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,.08); color:var(--sub); white-space:nowrap;}
+  .final-report{text-align:center;}
+  .score-big{font-size:3.4rem; font-weight:800; background:linear-gradient(90deg,var(--gold),var(--accent2));
+    -webkit-background-clip:text;background-clip:text;color:transparent; margin:6px 0;}
+  .rank-pill{
+    display:inline-block; padding:8px 22px; border-radius:30px; font-weight:700; font-size:1rem;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); margin:8px 0 20px; letter-spacing:.5px;
+  }
+  .dna-wrap{display:flex; justify-content:center; gap:18px; flex-wrap:wrap; margin:20px 0;}
+  .dna-item{width:120px;}
+  .dna-ring{width:90px;height:90px;border-radius:50%;margin:0 auto 8px;
+    background:conic-gradient(var(--accent2) calc(var(--pct)*1%), rgba(255,255,255,.08) 0);
+    display:flex;align-items:center;justify-content:center; position:relative;}
+  .dna-ring::before{content:"";position:absolute;width:66px;height:66px;border-radius:50%;background:var(--card);}
+  .dna-ring span{position:relative; font-weight:700; font-size:.9rem;}
+  .dna-label{font-size:.75rem; color:var(--sub);}
+  .feedback-box{
+    text-align:left; background:rgba(255,255,255,.04); border-radius:12px; padding:18px 20px; margin:18px 0;
+  }
+  .feedback-box h3{margin-top:0; font-size:1rem; color:var(--accent2);}
+  .milestone{
+    background:rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.3); border-radius:10px;
+    padding:14px 16px; margin:14px 0; font-size:.88rem;
+  }
+  .compare-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; text-align:left;}
+  @media(max-width:640px){.compare-grid{grid-template-columns:1fr;}}
+  .compare-col h4{margin:0 0 8px; font-size:.85rem; color:var(--sub); text-transform:uppercase;}
+  .principle{
+    margin-top:14px; padding:12px 16px; background:rgba(124,92,255,.12); border-radius:10px;
+    border-left:3px solid var(--accent); font-size:.86rem;
+  }
+  .hint-btn{background:rgba(255,209,102,.15); color:var(--gold); border:1px solid rgba(255,209,102,.3);}
+  footer{text-align:center; color:var(--sub); font-size:.78rem; margin-top:30px;}
+  .fadein{animation:fadeIn .4s ease;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+  ::-webkit-scrollbar{width:8px;} ::-webkit-scrollbar-thumb{background:#2c3757;border-radius:8px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+
+/* ============ SCENARIO DATA (Software Development / Intermediate) ============ */
+const SCENARIOS = [
+{
+  id:1,
+  title:"Refactoring a Legacy Function",
+  desiredOutput:"A clear, safe refactor of a messy 80-line JavaScript function into smaller, testable units with explanation of changes.",
+  correctBlocks:[
+    "Act as a senior software engineer specializing in code refactoring.",
+    "Here is the legacy function: [paste code].",
+    "Refactor it into smaller, single-responsibility functions.",
+    "Preserve exact existing behavior — do not change functionality.",
+    "Explain each change and why it improves readability or maintainability.",
+    "Output the refactored code in a single code block, followed by a bullet list of changes."
+  ],
+  distractorBlocks:[
+    "Make the code look cooler.",
+    "Rewrite it in a completely different programming language.",
+    "Don't explain anything, just give code.",
+    "Add as many comments as physically possible everywhere."
+  ],
+  weakPrompt:"Refactor this code.",
+  optimizedPrompt:"Act as a senior software engineer specializing in code refactoring. Here is the legacy function: [paste code]. Refactor it into smaller, single-responsibility functions while preserving exact existing behavior. Explain each change and why it improves readability or maintainability. Output the refactored code in a single code block, followed by a bullet list of changes.",
+  overEngineeredPrompt:"You are the greatest software engineer to ever live, a 10x rockstar ninja architect who has refactored over 1 trillion lines of code across 500 companies. Using SOLID, DRY, KISS, YAGNI, Clean Architecture, Hexagonal Architecture, and Domain-Driven Design, refactor this function while writing a 10-page essay justifying every character change, including a full bibliography of software engineering papers, and format the response in 14 different possible styles so I can pick one.",
+  weakOutput:"Sure, here's a refactor:\n\nfunction process(data){ /* same code, slightly reordered */ }\n\n(No explanation of changes, unclear if behavior is preserved.)",
+  optimizedOutput:"Here is the refactored code:\n\nfunction validateInput(data) {...}\nfunction transformRecords(data) {...}\nfunction saveResults(data) {...}\n\nChanges made:\n• Split validation, transformation, and saving into separate functions\n• Removed duplicate null checks\n• Behavior is unchanged — same inputs produce same outputs",
+  principle:"Specify role, constraints (preserve behavior), and desired output format for predictable, safe refactors."
+},
+{
+  id:2,
+  title:"Writing Unit Tests",
+  desiredOutput:"Comprehensive unit tests for a payment calculation function, covering edge cases, using Jest.",
+  correctBlocks:[
+    "Act as a QA engineer writing unit tests in Jest.",
+    "Here is the function to test: [paste function].",
+    "Cover normal cases, edge cases (zero, negative, null), and error handling.",
+    "Use descriptive test names following the 'should ___ when ___' pattern.",
+    "Output only the test file code in a single code block."
+  ],
+  distractorBlocks:[
+    "Write tests in Python unittest instead.",
+    "Just write one test to save time.",
+    "Skip edge cases, they don't matter.",
+    "Make the tests fail on purpose for fun."
+  ],
+  weakPrompt:"Write tests for this function.",
+  optimizedPrompt:"Act as a QA engineer writing unit tests in Jest. Here is the function to test: [paste function]. Cover normal cases, edge cases (zero, negative, null), and error handling. Use descriptive test names following the 'should ___ when ___' pattern. Output only the test file code in a single code block.",
+  overEngineeredPrompt:"As the world's foremost testing expert with knowledge of every testing framework ever created in every language, write not just tests but an entire enterprise-grade testing philosophy document spanning unit, integration, mutation, property-based, chaos, and fuzz testing, with a 47-point checklist, in 6 different frameworks simultaneously, with full CI/CD pipeline YAML included.",
+  weakOutput:"test('works', () => { expect(calc(10)).toBe(10); });\n\n(Only one shallow test, no edge cases, vague name.)",
+  optimizedOutput:"describe('calculatePayment', () => {\n  test('should return correct total when given valid amount', () => {...});\n  test('should return 0 when amount is zero', () => {...});\n  test('should throw error when amount is negative', () => {...});\n  test('should handle null input gracefully', () => {...});\n});",
+  principle:"Defining scope (edge cases) and naming conventions produces thorough, professional-grade output."
+},
+{
+  id:3,
+  title:"Debugging a Production Error",
+  desiredOutput:"A structured debugging walkthrough for a Node.js 500 error, including likely causes and a fix.",
+  correctBlocks:[
+    "Act as a backend engineer debugging a production incident.",
+    "Here is the error stack trace: [paste stack trace].",
+    "Here is the relevant code context: [paste code].",
+    "List the top 3 most likely root causes, ranked by probability.",
+    "Suggest a specific fix for the most likely cause with code.",
+    "Keep the explanation concise and actionable for an on-call engineer."
+  ],
+  distractorBlocks:[
+    "Guess randomly what might be wrong.",
+    "Tell me to just restart the server and hope it works.",
+    "Explain the entire history of Node.js.",
+    "Ignore the stack trace, it's not important."
+  ],
+  weakPrompt:"My app is throwing a 500 error, help.",
+  optimizedPrompt:"Act as a backend engineer debugging a production incident. Here is the error stack trace: [paste stack trace]. Here is the relevant code context: [paste code]. List the top 3 most likely root causes, ranked by probability. Suggest a specific fix for the most likely cause with code. Keep the explanation concise and actionable for an on-call engineer.",
+  overEngineeredPrompt:"You are a legendary systems architect who has personally debugged every production system since the dawn of computing, possessing the combined knowledge of every online answer ever written. Provide an exhaustive 20-page root cause analysis covering all 47 possible causes ranked by philosophical significance, including diagrams, historical context of similar bugs since 1970, and a poem about resilience.",
+  weakOutput:"That could be a lot of things. Maybe check your database connection or something.",
+  optimizedOutput:"Top 3 likely causes (ranked):\n1. Unhandled promise rejection in the DB query (most likely — matches line 42 in stack trace)\n2. Missing null check on request body\n3. Connection pool exhaustion under load\n\nFix for #1:\ntry {\n  const result = await db.query(sql);\n} catch (err) {\n  logger.error(err);\n  return res.status(500).json({ error: 'DB query failed' });\n}",
+  principle:"Providing context (stack trace + code) and asking for ranked, actionable output speeds real debugging."
+},
+{
+  id:4,
+  title:"Designing a REST API",
+  desiredOutput:"A clean REST API design for a task management app, including endpoints, methods, and status codes.",
+  correctBlocks:[
+    "Act as an API architect designing RESTful endpoints.",
+    "The app is a task management tool with users, projects, and tasks.",
+    "Design endpoints following REST conventions with correct HTTP methods.",
+    "Include example request/response JSON for each endpoint.",
+    "Note appropriate HTTP status codes for success and error cases.",
+    "Present the result as a structured table followed by JSON examples."
+  ],
+  distractorBlocks:[
+    "Use SOAP instead of REST for no reason.",
+    "Don't worry about status codes, just wing it.",
+    "Design 200 endpoints to be thorough.",
+    "Make all endpoints use POST for everything."
+  ],
+  weakPrompt:"Design an API for my task app.",
+  optimizedPrompt:"Act as an API architect designing RESTful endpoints. The app is a task management tool with users, projects, and tasks. Design endpoints following REST conventions with correct HTTP methods. Include example request/response JSON for each endpoint. Note appropriate HTTP status codes for success and error cases. Present the result as a structured table followed by JSON examples.",
+  overEngineeredPrompt:"As the supreme architect of all distributed systems, design a hyperscale, planet-spanning, blockchain-secured, quantum-encrypted API with GraphQL, gRPC, REST, SOAP, and WebSocket support simultaneously, capable of handling 10 trillion requests per second, with a 300-page design document including a full disaster recovery plan and philosophical treatise on API ethics.",
+  weakOutput:"You could have /tasks and /users endpoints, GET and POST should work fine probably.",
+  optimizedOutput:"Endpoint table:\nPOST /users -> Create user\nGET /projects -> List projects\nPOST /projects/:id/tasks -> Create task\n\nExample:\nPOST /projects/12/tasks\n{ title: 'Fix bug', status: 'open' }\n-> 201 Created",
+  principle:"Structured output formats (tables + JSON) make technical specs immediately usable."
+},
+{
+  id:5,
+  title:"Optimizing a Slow SQL Query",
+  desiredOutput:"An optimized version of a slow SQL query with explanation of indexing and query plan improvements.",
+  correctBlocks:[
+    "Act as a database performance engineer.",
+    "Here is the slow query and table schema: [paste query + schema].",
+    "Identify why the query is slow (e.g. missing indexes, full table scans).",
+    "Provide an optimized version of the query.",
+    "Suggest any indexes that should be added, with CREATE INDEX statements.",
+    "Explain the expected performance improvement briefly."
+  ],
+  distractorBlocks:[
+    "Just tell me to add more RAM to the server.",
+    "Rewrite the entire database from scratch.",
+    "Ignore the schema, guess the structure.",
+    "Switch to a NoSQL database instead."
+  ],
+  weakPrompt:"This SQL query is slow, fix it.",
+  optimizedPrompt:"Act as a database performance engineer. Here is the slow query and table schema: [paste query + schema]. Identify why the query is slow (e.g. missing indexes, full table scans). Provide an optimized version of the query. Suggest any indexes that should be added, with CREATE INDEX statements. Explain the expected performance improvement briefly.",
+  overEngineeredPrompt:"As the ultimate database wizard with mastery over every RDBMS ever invented including experimental ones, provide a 50-page dissertation on query optimization theory, covering all possible index types, sharding strategies, and a full migration to a distributed database cluster, with benchmarks across 12 cloud providers and a cost analysis spanning 10 years.",
+  weakOutput:"Try adding an index maybe? Should help.",
+  optimizedOutput:"Why it's slow: full table scan on orders due to missing index on customer_id and created_at.\n\nOptimized query:\nSELECT * FROM orders WHERE customer_id = ? AND created_at > ? ORDER BY created_at DESC LIMIT 20;\n\nAdd index:\nCREATE INDEX idx_orders_customer_created ON orders(customer_id, created_at);\n\nExpected improvement: query plan shifts from full scan to index seek — likely 10-50x faster on large tables.",
+  principle:"Giving schema context and asking for both diagnosis and fix yields actionable performance gains."
+},
+{
+  id:6,
+  title:"Writing a Git Commit Message Convention Guide",
+  desiredOutput:"A concise team guide for writing consistent, high-quality git commit messages following Conventional Commits.",
+  correctBlocks:[
+    "Act as an engineering lead documenting team best practices.",
+    "Create a short guide for writing git commit messages using the Conventional Commits format.",
+    "Include the standard types (feat, fix, docs, refactor, chore, etc.) with one-line descriptions.",
+    "Provide 3 good example commit messages and 2 bad examples with corrections.",
+    "Keep the guide under 300 words and use headings and bullet points."
+  ],
+  distractorBlocks:[
+    "Make commit messages as long as possible.",
+    "Invent a completely new, non-standard format.",
+    "Skip examples, they aren't necessary.",
+    "Write the guide in legal contract language."
+  ],
+  weakPrompt:"Give me commit message rules.",
+  optimizedPrompt:"Act as an engineering lead documenting team best practices. Create a short guide for writing git commit messages using the Conventional Commits format. Include the standard types (feat, fix, docs, refactor, chore, etc.) with one-line descriptions. Provide 3 good example commit messages and 2 bad examples with corrections. Keep the guide under 300 words and use headings and bullet points.",
+  overEngineeredPrompt:"As the founding father of version control philosophy who has personally reviewed every commit in every open source project since Linux was created, write an exhaustive 40-page constitutional document governing all possible commit message scenarios across all programming languages and time zones, including a tribunal process for commit message disputes.",
+  weakOutput:"Just write clear commit messages, like 'fix bug' or 'update stuff'.",
+  optimizedOutput:"Commit Message Guide (Conventional Commits)\n\nTypes: feat, fix, docs, refactor, chore, test\n\nGood examples:\n- feat(auth): add password reset flow\n- fix(api): handle null response from payment gateway\n\nBad -> Good:\n- 'fixed stuff' -> 'fix(cart): correct total calculation for discounts'",
+  principle:"Constraints like word limits and format requests keep documentation guides concise and usable."
+}
+];
+
+/* ============ APP STATE ============ */
+const DOMAIN = "Software Development";
+const DIFFICULTY = "Intermediate";
+const CHALLENGE_TYPES = ["build","clean","choose"];
+
+let state = {
+  screen:"intro",
+  scenarioOrder:[],
+  currentIndex:0,
+  score:0,
+  totalMoves:0,
+  wrongPlacements:0,
+  hintsUsed:0,
+  optimizationBonus:0,
+  startTime:null,
+  scenarioResults:[],
+  currentAttempt:null
+};
+
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function pickScenarios(){
+  const shuffled = shuffle(SCENARIOS);
+  const count = Math.min(6, shuffled.length);
+  return shuffled.slice(0,count).map((s,i)=>({
+    ...s,
+    challengeType: CHALLENGE_TYPES[i % CHALLENGE_TYPES.length]
+  }));
+}
+
+function toast(msg, type){
+  const t = document.createElement('div');
+  t.className = 'toast ' + (type||'info');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 3000);
+}
+
+const app = document.getElementById('app');
+
+function render(){
+  if(state.screen==='intro') renderIntro();
+  else if(state.screen==='playing') renderPlaying();
+  else if(state.screen==='report') renderReport();
+}
+
+function renderIntro(){
+  app.innerHTML = `
+    <div class="header fadein">
+      <h1>🧩 Prompt Puzzle</h1>
+      <p>Master AI Prompting Through Play</p>
+    </div>
+    <div class="card fadein">
+      <h2 class="section">Your Session</h2>
+      <p style="color:var(--sub)">Domain: <b style="color:var(--text)">${DOMAIN}</b> &nbsp;|&nbsp; Difficulty: <b style="color:var(--text)">${DIFFICULTY}</b></p>
+      <p style="color:var(--sub); font-size:.9rem; line-height:1.6;">
+        You'll face 6 scenarios across three challenge types: <b style="color:var(--accent2)">Build the Prompt</b>,
+        <b style="color:var(--gold)">Clean the Prompt</b>, and <b style="color:#a3f0e8">Choose the Best Prompt</b>.
+        Your goal: construct prompts that get the best possible AI output — efficient, clear, and free of noise.
+      </p>
+      <div class="actions">
+        <button class="btn" id="startBtn">Start Puzzle →</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('startBtn').onclick = () => {
+    state.scenarioOrder = pickScenarios();
+    state.currentIndex = 0;
+    state.score = 0;
+    state.wrongPlacements = 0;
+    state.hintsUsed = 0;
+    state.optimizationBonus = 0;
+    state.totalMoves = 0;
+    state.scenarioResults = [];
+    state.startTime = Date.now();
+    state.screen = 'playing';
+    initScenarioAttempt();
+    render();
+  };
+}
+
+function initScenarioAttempt(){
+  const sc = state.scenarioOrder[state.currentIndex];
+  state.currentAttempt = {
+    scenarioId: sc.id,
+    type: sc.challengeType,
+    startTime: Date.now(),
+    wrong:0,
+    hints:0,
+    done:false,
+    placedBlocks:[],
+    poolBlocks: sc.challengeType==='build' ? shuffle([...sc.correctBlocks, ...sc.distractorBlocks]) : [],
+    cleanLines: sc.challengeType==='clean' ? buildCleanLines(sc) : [],
+    chosenOption: null
+  };
+}
+
+function buildCleanLines(sc){
+  const good = sc.correctBlocks.slice(0, Math.min(4, sc.correctBlocks.length)).map(t=>({text:t, bad:false, marked:false}));
+  const bad = sc.distractorBlocks.slice(0,3).map(t=>({text:t, bad:true, marked:false}));
+  return shuffle([...good, ...bad]);
+}
+
+function renderPlaying(){
+  const sc = state.scenarioOrder[state.currentIndex];
+  const progressPct = Math.round((state.currentIndex/state.scenarioOrder.length)*100);
+  const elapsed = Math.floor((Date.now()-state.startTime)/1000);
+
+  app.innerHTML = `
+    <div class="header fadein">
+      <h1>🧩 Prompt Puzzle</h1>
+      <p>${DOMAIN} · ${DIFFICULTY}</p>
+    </div>
+    <div class="card fadein">
+      <div class="topbar">
+        <div class="stats">
+          <div class="stat">🎯 <b id="statScore">${state.score}</b> pts</div>
+          <div class="stat">⏱ <b id="statTime">${elapsed}s</b></div>
+          <div class="stat">🧱 <b>${state.totalMoves}</b> moves</div>
+          <div class="stat">❌ <b>${state.wrongPlacements}</b> wrong</div>
+          <div class="stat">💡 <b>${state.hintsUsed}</b> hints</div>
+        </div>
+        <div class="stat">Scenario ${state.currentIndex+1} / ${state.scenarioOrder.length}</div>
+      </div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${progressPct}%"></div></div>
+    </div>
+    <div class="card fadein" id="scenarioCard"></div>
+  `;
+  renderScenarioBody(sc);
+  startTimerTick();
+}
+
+let tickInterval = null;
+function startTimerTick(){
+  if(tickInterval) clearInterval(tickInterval);
+  tickInterval = setInterval(()=>{
+    const el = document.getElementById('statTime');
+    if(!el || state.screen!=='playing'){ clearInterval(tickInterval); return; }
+    const elapsed = Math.floor((Date.now()-state.startTime)/1000);
+    el.textContent = elapsed+"s";
+  }, 1000);
+}
+
+function renderScenarioBody(sc){
+  const container = document.getElementById('scenarioCard');
+  const badgeClass = sc.challengeType;
+  const badgeLabel = sc.challengeType==='build' ? '🧱 Build the Prompt' :
+                      sc.challengeType==='clean' ? '🧹 Clean the Prompt' : '⚖️ Choose the Best Prompt';
+
+  let bodyHtml = `
+    <span class="badge ${badgeClass}">${badgeLabel}</span>
+    <h2 class="section">${sc.title}</h2>
+    <div class="desired"><b>Desired Output:</b> ${sc.desiredOutput}</div>
+  `;
+
+  if(sc.challengeType==='build'){
+    bodyHtml += renderBuildChallenge(sc);
+  } else if(sc.challengeType==='clean'){
+    bodyHtml += renderCleanChallenge(sc);
+  } else {
+    bodyHtml += renderChooseChallenge(sc);
+  }
+
+  container.innerHTML = bodyHtml;
+  wireChallengeEvents(sc);
+}
+
+function renderBuildChallenge(sc){
+  const attempt = state.currentAttempt;
+  const poolHtml = attempt.poolBlocks
+    .filter(b => !attempt.placedBlocks.includes(b))
+    .map(b => `<div class="block" draggable="true" data-block="${escapeAttr(b)}">${b}</div>`).join('');
+  const placedHtml = attempt.placedBlocks
+    .map(b => `<div class="block placed removable" data-block="${escapeAttr(b)}">${b}<span class="x" data-remove="${escapeAttr(b)}">×</span></div>`).join('');
+
+  return `
+    <div class="zone-label">Available Blocks (drag or click to add)</div>
+    <div class="blockzone" id="poolZone">${poolHtml || '<span style="color:var(--sub); font-size:.85rem;">All blocks placed.</span>'}</div>
+    <div class="zone-label">Your Prompt (order matters!)</div>
+    <div class="blockzone" id="placedZone">${placedHtml || '<span style="color:var(--sub); font-size:.85rem;">Drag or click blocks to add them here...</span>'}</div>
+    <div class="actions">
+      <button class="btn hint-btn" id="hintBtn">💡 Hint</button>
+      <button class="btn" id="checkBtn">✓ Check Prompt</button>
+    </div>
+  `;
+}
+
+function renderCleanChallenge(sc){
+  const attempt = state.currentAttempt;
+  const linesHtml = attempt.cleanLines.map((line,idx)=>`
+    <div class="clean-line ${line.marked?'marked-bad':''}" data-idx="${idx}">
+      <span>${line.text}</span>
+      <span class="tag">${line.marked ? 'Marked as noise' : 'Click to mark as noise'}</span>
+    </div>
+  `).join('');
+  return `
+    <p style="color:var(--sub); font-size:.88rem;">This prompt contains unnecessary or harmful lines. Click each line that should be <b>removed</b> to clean it up.</p>
+    <div id="cleanZone">${linesHtml}</div>
+    <div class="actions">
+      <button class="btn hint-btn" id="hintBtn">💡 Hint</button>
+      <button class="btn" id="checkBtn">✓ Submit Cleaned Prompt</button>
+    </div>
+  `;
+}
+
+function renderChooseChallenge(sc){
+  const attempt = state.currentAttempt;
+  if(!attempt.choiceOptions){
+    attempt.choiceOptions = shuffle([
+      {key:'weak', label:'Option A', text:sc.weakPrompt},
+      {key:'optimized', label:'Option B', text:sc.optimizedPrompt},
+      {key:'over', label:'Option C', text:sc.overEngineeredPrompt}
+    ]);
+  }
+  const optsHtml = attempt.choiceOptions.map(o => `
+    <div class="opt ${attempt.chosenOption===o.key?'selected':''}" data-key="${o.key}">
+      <div style="font-size:.7rem;color:var(--sub);margin-bottom:6px;">${o.label}</div>
+      <div style="font-weight:400; font-size:.82rem; text-align:left;">${o.text}</div>
+    </div>
+  `).join('');
+  return `
+    <p style="color:var(--sub); font-size:.88rem;">Choose the prompt most likely to produce the desired output efficiently — not too weak, not over-engineered.</p>
+    <div class="opt-grid">${optsHtml}</div>
+    <div class="actions">
+      <button class="btn hint-btn" id="hintBtn">💡 Hint</button>
+      <button class="btn" id="checkBtn">✓ Submit Choice</button>
+    </div>
+  `;
+}
+
+function escapeAttr(str){
+  return str.replace(/"/g,'&quot;');
+}
+
+function wireChallengeEvents(sc){
+  const attempt = state.currentAttempt;
+
+  document.getElementById('hintBtn').onclick = () => {
+    attempt.hints++;
+    state.hintsUsed++;
+    let hintMsg = "";
+    if(sc.challengeType==='build') hintMsg = "Try starting with a role-assignment block, then context, then instructions, then format.";
+    else if(sc.challengeType==='clean') hintMsg = "Look for vague, extreme, or off-topic instructions — those are noise.";
+    else hintMsg = "The best option balances clarity and constraints — avoid both vagueness and excessive complexity.";
+    toast(hintMsg, 'info');
+    render();
+  };
+
+  document.getElementById('checkBtn').onclick = () => {
+    if(sc.challengeType==='build') checkBuild(sc);
+    else if(sc.challengeType==='clean') checkClean(sc);
+    else checkChoose(sc);
+  };
+
+  if(sc.challengeType==='build'){
+    setupDragAndDrop(sc);
+    document.querySelectorAll('#placedZone .x').forEach(x=>{
+      x.onclick = (e) => {
+        e.stopPropagation();
+        const val = x.getAttribute('data-remove');
+        attempt.placedBlocks = attempt.placedBlocks.filter(b=>b!==val);
+        renderScenarioBody(sc);
+      };
+    });
+  }
+
+  if(sc.challengeType==='clean'){
+    document.querySelectorAll('.clean-line').forEach(el=>{
+      el.onclick = () => {
+        const idx = parseInt(el.getAttribute('data-idx'));
+        attempt.cleanLines[idx].marked = !attempt.cleanLines[idx].marked;
+        renderScenarioBody(sc);
+      };
+    });
+  }
+
+  if(sc.challengeType==='choose'){
+    document.querySelectorAll('.opt').forEach(el=>{
+      el.onclick = () => {
+        attempt.chosenOption = el.getAttribute('data-key');
+        renderScenarioBody(sc);
+      };
+    });
+  }
+}
+
+function setupDragAndDrop(sc){
+  const attempt = state.currentAttempt;
+  let dragged = null;
+
+  document.querySelectorAll('#poolZone .block').forEach(el=>{
+    el.ondragstart = (e) => { dragged = el.getAttribute('data-block'); el.classList.add('dragging'); };
+    el.ondragend = () => el.classList.remove('dragging');
+    el.onclick = () => {
+      const val = el.getAttribute('data-block');
+      if(!attempt.placedBlocks.includes(val)){
+        attempt.placedBlocks.push(val);
+        state.totalMoves++;
+        renderScenarioBody(sc);
+      }
+    };
+  });
+
+  const placedZone = document.getElementById('placedZone');
+  const poolZone = document.getElementById('poolZone');
+
+  [placedZone, poolZone].forEach(zone=>{
+    zone.ondragover = (e) => e.preventDefault();
+  });
+
+  placedZone.ondrop = (e) => {
+    e.preventDefault();
+    if(dragged && !attempt.placedBlocks.includes(dragged)){
+      attempt.placedBlocks.push(dragged);
+      state.totalMoves++;
+      renderScenarioBody(sc);
+    }
+    dragged = null;
+  };
+
+  poolZone.ondrop = (e) => {
+    e.preventDefault();
+    if(dragged){
+      attempt.placedBlocks = attempt.placedBlocks.filter(b=>b!==dragged);
+      renderScenarioBody(sc);
+    }
+    dragged = null;
+  };
+}
+
+function checkBuild(sc){
+  const attempt = state.currentAttempt;
+  const placed = attempt.placedBlocks;
+  const correctSet = sc.correctBlocks;
+  let correctCount = 0;
+  let wrongCount = 0;
+
+  placed.forEach(b=>{
+    if(correctSet.includes(b)) correctCount++;
+    else wrongCount++;
+  });
+  const missing = correctSet.filter(b=>!placed.includes(b)).length;
+  const orderBonus = isOrderCorrect(placed, correctSet) ? 15 : 0;
+
+  attempt.wrong += wrongCount;
+  state.wrongPlacements += wrongCount;
+
+  const accuracy = Math.max(0, Math.round(((correctCount - wrongCount*0.5 - missing*0.5) / correctSet.length) * 100));
+  const points = Math.max(0, correctCount*10 - wrongCount*8 - missing*5 + orderBonus - attempt.hints*5);
+  finishScenario(sc, points, accuracy, wrongCount===0 && missing===0);
+}
+
+function isOrderCorrect(placed, correctSet){
+  const filtered = placed.filter(b=>correctSet.includes(b));
+  if(filtered.length !== correctSet.length) return false;
+  for(let i=0;i<filtered.length;i++){
+    if(filtered[i] !== correctSet[i]) return false;
+  }
+  return true;
+}
+
+function checkClean(sc){
+  const attempt = state.currentAttempt;
+  let correctMarks = 0, wrongMarks = 0, missedMarks = 0;
+
+  attempt.cleanLines.forEach(line=>{
+    if(line.bad && line.marked) correctMarks++;
+    else if(!line.bad && line.marked) wrongMarks++;
+    else if(line.bad && !line.marked) missedMarks++;
+  });
+
+  attempt.wrong += wrongMarks;
+  state.wrongPlacements += wrongMarks;
+
+  const totalBad = attempt.cleanLines.filter(l=>l.bad).length || 1;
+  const accuracy = Math.max(0, Math.round(((correctMarks - wrongMarks*0.5 - missedMarks*0.5)/totalBad)*100));
+  const points = Math.max(0, correctMarks*15 - wrongMarks*10 - missedMarks*8 - attempt.hints*5);
+  finishScenario(sc, points, accuracy, wrongMarks===0 && missedMarks===0);
+}
+
+function checkChoose(sc){
+  const attempt = state.currentAttempt;
+  if(!attempt.chosenOption){
+    toast("Please select an option first.", "bad");
+    return;
+  }
+  const isCorrect = attempt.chosenOption === 'optimized';
+  if(attempt.chosenOption!=='optimized'){
+    attempt.wrong++;
+    state.wrongPlacements++;
+  }
+  const accuracy = isCorrect ? 100 : 0;
+  const points = isCorrect ? Math.max(0, 60 - attempt.hints*5) : Math.max(0, 10 - attempt.hints*5);
+  finishScenario(sc, points, accuracy, isCorrect);
+}
+
+function finishScenario(sc, points, accuracy, wasFullyCorrect){
+  const attempt = state.currentAttempt;
+  const timeSpent = Math.round((Date.now()-attempt.startTime)/1000);
+  const optBonus = (attempt.hints===0 && wasFullyCorrect) ? 20 : 0;
+  state.optimizationBonus += optBonus;
+  const finalPoints = Math.max(0, points + optBonus);
+  state.score += finalPoints;
+
+  state.scenarioResults.push({
+    id: sc.id,
+    title: sc.title,
+    type: sc.challengeType,
+    accuracy: Math.min(100, accuracy),
+    points: finalPoints,
+    time: timeSpent,
+    hints: attempt.hints,
+    wrong: attempt.wrong,
+    principle: sc.principle,
+    wasFullyCorrect,
+    optimizedPrompt: sc.optimizedPrompt,
+    optimizedOutput: sc.optimizedOutput,
+    weakOutput: sc.weakOutput
+  });
+
+  toast(wasFullyCorrect ? `Excellent! +${finalPoints} pts` : `Scenario complete. +${finalPoints} pts`, wasFullyCorrect?'good':'info');
+
+  showRevealPanel(sc, wasFullyCorrect, finalPoints);
+}
+
+function showRevealPanel(sc, wasFullyCorrect, finalPoints){
+  const container = document.getElementById('scenarioCard');
+  const isLast = state.currentIndex === state.scenarioOrder.length - 1;
+  container.innerHTML += `
+    <div class="fadein" style="margin-top:20px; border-top:1px solid rgba(255,255,255,.08); padding-top:20px;">
+      <h2 class="section">${wasFullyCorrect ? '✅ Great Prompting!' : '📊 Result & Insight'}</h2>
+      <p style="color:var(--sub); font-size:.85rem;">You earned <b style="color:var(--gold)">${finalPoints} pts</b> this round.</p>
+      <div class="compare-grid">
+        <div class="compare-col">
+          <h4>Weak Output</h4>
+          <div class="promptbox">${sc.weakOutput}</div>
+        </div>
+        <div class="compare-col">
+          <h4>Optimized Output</h4>
+          <div class="promptbox">${sc.optimizedOutput}</div>
+        </div>
+      </div>
+      <div class="principle">💡 <b>Prompt Principle:</b> ${sc.principle}</div>
+      <div class="actions">
+        <button class="btn" id="nextBtn">${isLast ? 'View Final Report →' : 'Next Scenario →'}</button>
+      </div>
+    </div>
+  `;
+  const checkBtn = document.getElementById('checkBtn');
+  const hintBtn = document.getElementById('hintBtn');
+  if(checkBtn) checkBtn.disabled = true;
+  if(hintBtn) hintBtn.disabled = true;
+
+  document.getElementById('nextBtn').onclick = () => {
+    if(isLast){
+      state.screen = 'report';
+      render();
+    } else {
+      state.currentIndex++;
+      initScenarioAttempt();
+      render();
+    }
+  };
+}
+
+function renderReport(){
+  if(tickInterval) clearInterval(tickInterval);
+  const totalTime = Math.round((Date.now()-state.startTime)/1000);
+  const results = state.scenarioResults;
+  const avgAccuracy = Math.round(results.reduce((a,r)=>a+r.accuracy,0)/results.length);
+  const totalScore = state.score;
+  const maxPossible = results.length * 90;
+  const scorePct = Math.min(100, Math.round((totalScore/maxPossible)*100));
+
+  let rating, rank;
+  if(scorePct>=90){ rating="Master Prompt Engineer"; rank="S"; }
+  else if(scorePct>=75){ rating="Advanced Prompter"; rank="A"; }
+  else if(scorePct>=55){ rating="Skilled Prompter"; rank="B"; }
+  else if(scorePct>=35){ rating="Developing Prompter"; rank="C"; }
+  else { rating="Prompt Novice"; rank="D"; }
+
+  const clarity = Math.min(100, avgAccuracy);
+  const efficiency = Math.max(10, 100 - state.hintsUsed*10);
+  const precision = Math.max(10, 100 - Math.round((state.wrongPlacements/(results.length||1))*20));
+  const structure = Math.min(100, Math.round(results.filter(r=>r.wasFullyCorrect).length/results.length*100));
+  const creativity = Math.min(100, Math.round((state.optimizationBonus/ (results.length*20 || 1))*100));
+
+  const bestScenario = results.reduce((a,b)=> a.accuracy>=b.accuracy?a:b, results[0]);
+  const worstScenario = results.reduce((a,b)=> a.accuracy<=b.accuracy?a:b, results[0]);
+
+  const nextMilestone = scorePct>=90 ? "You've reached the top tier — try a harder difficulty next!" :
+    `Improve accuracy on "${worstScenario.title}"-style scenarios (${worstScenario.type}) to reach the next rank.`;
+
+  const dnaHtml = [
+    {label:'Clarity', pct:clarity},
+    {label:'Efficiency', pct:efficiency},
+    {label:'Precision', pct:precision},
+    {label:'Structure', pct:structure},
+    {label:'Optimization', pct:creativity}
+  ].map(d=>`
+    <div class="dna-item">
+      <div class="dna-ring" style="--pct:${d.pct}"><span>${d.pct}%</span></div>
+      <div class="dna-label">${d.label}</div>
+    </div>
+  `).join('');
+
+  const finalOptimized = bestScenario.optimizedPrompt;
+
+  app.innerHTML = `
+    <div class="header fadein">
+      <h1>🧩 Prompt Puzzle</h1>
+      <p>Your Performance Report</p>
+    </div>
+    <div class="card final-report fadein">
+      <div class="score-big">${totalScore}</div>
+      <p style="color:var(--sub)">Prompt Score</p>
+      <div class="rank-pill">Rank ${rank} · ${rating}</div>
+
+      <div class="stats" style="justify-content:center;">
+        <div class="stat">🎯 Accuracy <b>${avgAccuracy}%</b></div>
+        <div class="stat">⏱ Time <b>${totalTime}s</b></div>
+        <div class="stat">🧱 Moves <b>${state.totalMoves}</b></div>
+        <div class="stat">❌ Wrong <b>${state.wrongPlacements}</b></div>
+        <div class="stat">💡 Hints <b>${state.hintsUsed}</b></div>
+        <div class="stat">✨ Opt. Bonus <b>${state.optimizationBonus}</b></div>
+      </div>
+
+      <h2 class="section" style="margin-top:28px;">🧬 Prompt DNA</h2>
+      <div class="dna-wrap">${dnaHtml}</div>
+
+      <div class="feedback-box">
+        <h3>Personalized Feedback</h3>
+        <p style="font-size:.9rem; line-height:1.6; color:var(--sub);">
+          You performed strongest on <b style="color:var(--text)">"${bestScenario.title}"</b>
+          (${bestScenario.accuracy}% accuracy), showing solid instincts for structuring prompts with clear roles and constraints.
+          Your growth area is <b style="color:var(--text)">"${worstScenario.title}"</b> (${worstScenario.accuracy}% accuracy) —
+          revisit how context and output format shape AI responses there.
+        </p>
+        <div class="milestone">🏁 <b>Next Milestone:</b> ${nextMilestone}</div>
+      </div>
+
+      <div class="feedback-box">
+        <h3>Your Final Optimized Prompt (Best Scenario)</h3>
+        <div class="promptbox">${finalOptimized}</div>
+      </div>
+
+      <div class="actions" style="justify-content:center;">
+        <button class="btn" id="replayBtn">🔁 Replay with New Scenarios</button>
+        <button class="btn secondary" id="restartBtn">🏠 Restart</button>
+      </div>
+    </div>
+    <footer>Prompt Puzzle · Practice makes perfect prompts.</footer>
+  `;
+
+  document.getElementById('replayBtn').onclick = () => {
+    state.scenarioOrder = pickScenarios();
+    state.currentIndex = 0;
+    state.score = 0;
+    state.wrongPlacements = 0;
+    state.hintsUsed = 0;
+    state.optimizationBonus = 0;
+    state.totalMoves = 0;
+    state.scenarioResults = [];
+    state.startTime = Date.now();
+    state.screen = 'playing';
+    initScenarioAttempt();
+    render();
+  };
+
+  document.getElementById('restartBtn').onclick = () => {
+    location.reload();
+  };
+}
+
+render();
+
+})();
+</script>
+</body>
+</html>
