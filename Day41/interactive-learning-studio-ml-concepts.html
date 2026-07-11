@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Learning Studio — Core ML Concepts</title>
+<style>
+:root{
+  --bg:#0D1117;
+  --bg-alt:#12161F;
+  --surface:#1A1F2B;
+  --surface-2:#222839;
+  --line:#2B3245;
+  --text:#EAEDF3;
+  --muted:#8D96AC;
+  --dim:#616B85;
+  --teal:#3FD6C0;
+  --teal-dim:#1d4f48;
+  --violet:#9C8CFF;
+  --violet-dim:#3a3466;
+  --amber:#FFB454;
+  --green:#5FBF8A;
+  --red:#F0655E;
+  --mono: "SFMono-Regular", ui-monospace, "Cascadia Mono", "Courier New", monospace;
+  --sans: "Segoe UI", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --radius: 10px;
+  --shadow: 0 10px 30px -12px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  margin:0;
+  background:
+    radial-gradient(1100px 550px at 8% -10%, rgba(156,140,255,0.08), transparent),
+    radial-gradient(900px 500px at 92% 0%, rgba(63,214,192,0.07), transparent),
+    var(--bg);
+  color:var(--text);
+  font-family:var(--sans);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion: reduce){
+  *{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; scroll-behavior:auto !important;}
+}
+::selection{background:var(--teal); color:#08110F;}
+a{color:var(--violet);}
+h1,h2,h3,h4{font-family:var(--mono); font-weight:700; letter-spacing:-0.01em; margin:0 0 .5em;}
+p{margin:0 0 1em; color:var(--muted);}
+code, .code{font-family:var(--mono);}
+button{font-family:var(--sans); cursor:pointer;}
+
+.container{max-width:960px; margin:0 auto; padding:0 24px;}
+.hidden{display:none !important;}
+
+#progressBar{
+  position:sticky; top:0; z-index:50;
+  background:rgba(13,17,23,0.88); backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.progress-inner{display:flex; align-items:center; gap:16px; padding:12px 24px; max-width:960px; margin:0 auto;}
+.progress-track{flex:1; height:6px; background:var(--surface-2); border-radius:99px; overflow:hidden;}
+.progress-fill{height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg, var(--violet), var(--teal)); transition:width .5s ease;}
+.progress-label{font-family:var(--mono); font-size:.78rem; color:var(--muted); white-space:nowrap;}
+.badge-count{font-family:var(--mono); font-size:.75rem; color:var(--teal); border:1px solid var(--teal-dim); padding:3px 9px; border-radius:99px; white-space:nowrap;}
+
+.hero{padding:64px 0 24px;}
+.terminal{background:#080B10; border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; margin-bottom:28px;}
+.term-bar{display:flex; align-items:center; gap:8px; padding:10px 14px; background:var(--surface); border-bottom:1px solid var(--line);}
+.dot{width:10px; height:10px; border-radius:50%;}
+.dot.r{background:#F0655E;} .dot.y{background:#FFB454;} .dot.g{background:#5FBF8A;}
+.term-title{margin-left:8px; font-family:var(--mono); font-size:.78rem; color:var(--dim);}
+.term-body{padding:20px 22px; font-family:var(--mono); font-size:.9rem;}
+.term-line{margin-bottom:6px;}
+.prompt{color:var(--teal);}
+.term-out{color:var(--muted);}
+.type-cursor{display:inline-block; width:8px; height:1em; background:var(--amber); vertical-align:middle; animation:blink 1s step-end infinite;}
+@keyframes blink{50%{opacity:0;}}
+
+.eyebrow{font-family:var(--mono); color:var(--teal); font-size:.78rem; letter-spacing:.12em; text-transform:uppercase; margin-bottom:10px;}
+.hero h1{font-size:2.05rem; color:var(--text); line-height:1.25;}
+.hero .lead{font-size:1.02rem; max-width:640px;}
+
+.grid-4{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin:28px 0;}
+@media(max-width:800px){.grid-4{grid-template-columns:repeat(2,1fr);}}
+.info-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; transition:transform .2s ease, border-color .2s ease;}
+.info-card:hover{transform:translateY(-3px); border-color:var(--violet-dim);}
+.info-card .ic-label{font-family:var(--mono); font-size:.72rem; color:var(--dim); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;}
+.info-card .ic-value{font-family:var(--mono); font-size:1.02rem; color:var(--text);}
+
+.obj-list{list-style:none; margin:0; padding:0;}
+.obj-list li{padding:10px 0 10px 30px; position:relative; border-bottom:1px dashed var(--line); color:var(--text); font-size:.95rem;}
+.obj-list li:last-child{border-bottom:none;}
+.obj-list li::before{content:"›"; position:absolute; left:0; top:9px; color:var(--teal); font-family:var(--mono); font-weight:700; font-size:1.1rem;}
+
+.reward-box{display:flex; align-items:center; gap:14px; background:var(--surface); border:1px solid var(--teal-dim); border-radius:var(--radius); padding:16px 18px; margin:20px 0;}
+.reward-icon{font-size:1.6rem;}
+.reward-box .rt{font-family:var(--mono); color:var(--teal); font-size:.85rem; margin-bottom:2px;}
+
+.cta-row{display:flex; gap:12px; margin-top:26px; flex-wrap:wrap;}
+.btn{font-family:var(--mono); font-size:.88rem; padding:12px 22px; border-radius:8px; border:1px solid var(--line); background:var(--surface); color:var(--text); transition:all .2s ease;}
+.btn:hover{border-color:var(--violet); background:var(--surface-2);}
+.btn.primary{background:var(--teal); color:#08110F; border-color:var(--teal); font-weight:700;}
+.btn.primary:hover{background:#5CE8D3;}
+.btn:disabled{opacity:.4; cursor:not-allowed;}
+.btn:focus-visible, a:focus-visible, input:focus-visible, .quiz-opt:focus-visible{outline:2px solid var(--teal); outline-offset:2px;}
+
+#moduleNav{display:flex; gap:8px; padding:14px 0; flex-wrap:wrap; margin-bottom:6px;}
+.nav-pill{font-family:var(--mono); font-size:.78rem; padding:8px 14px; border-radius:99px; border:1px solid var(--line); background:var(--surface); color:var(--dim); display:flex; align-items:center; gap:6px;}
+.nav-pill.unlocked{color:var(--text); cursor:pointer;}
+.nav-pill.unlocked:hover{border-color:var(--violet);}
+.nav-pill.active{border-color:var(--teal); color:var(--teal);}
+.nav-pill .lock{font-size:.75rem;}
+
+.module{padding:56px 0; border-top:1px solid var(--line);}
+.module-head{margin-bottom:30px;}
+.mod-num{font-family:var(--mono); color:var(--violet); font-size:.8rem; letter-spacing:.1em;}
+.module h2{font-size:1.65rem; margin-top:4px;}
+.mod-sub{color:var(--muted); font-size:1rem; max-width:620px;}
+
+.section-block{margin-bottom:34px;}
+.section-block h3{font-size:1.05rem; color:var(--teal); display:flex; align-items:center; gap:8px;}
+.section-block h3 .tag{font-size:.65rem; font-family:var(--mono); color:var(--dim); border:1px solid var(--line); padding:2px 8px; border-radius:99px; text-transform:uppercase;}
+
+.codebox{background:#080B10; border:1px solid var(--line); border-radius:8px; padding:16px 18px; font-family:var(--mono); font-size:.85rem; overflow-x:auto; color:#D9DCE8; margin:12px 0;}
+.codebox .c1{color:var(--green);} .codebox .c2{color:var(--violet);} .codebox .c3{color:var(--amber);} .codebox .cmt{color:var(--dim); font-style:italic;}
+
+.analogy-box{background:linear-gradient(135deg, rgba(156,140,255,0.08), rgba(63,214,192,0.05)); border:1px solid var(--violet-dim); border-radius:var(--radius); padding:16px 18px; margin:14px 0;}
+.analogy-box .al-label{font-family:var(--mono); font-size:.72rem; color:var(--violet); text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px;}
+
+.compare-table{width:100%; border-collapse:collapse; margin:14px 0; font-size:.9rem;}
+.compare-table th,.compare-table td{border:1px solid var(--line); padding:10px 12px; text-align:left;}
+.compare-table th{background:var(--surface-2); font-family:var(--mono); color:var(--teal); font-size:.78rem; text-transform:uppercase;}
+.compare-table td{color:var(--muted);}
+.compare-table tr:nth-child(even) td{background:rgba(255,255,255,0.02);}
+
+.misconception{border-left:3px solid var(--red); background:rgba(240,101,94,0.06); padding:12px 16px; border-radius:0 8px 8px 0; margin:10px 0;}
+.misconception .mc-label{font-family:var(--mono); font-size:.72rem; color:var(--red); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+
+.takeaways{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+.takeaways ul{margin:0; padding-left:18px; color:var(--text);}
+.takeaways li{margin-bottom:6px; font-size:.92rem;}
+
+.diagram-wrap{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin:14px 0; overflow-x:auto;}
+.diagram-wrap svg{display:block; margin:0 auto; max-width:100%; height:auto;}
+
+.exercise{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin:14px 0;}
+.exercise textarea{width:100%; min-height:110px; background:#080B10; color:var(--text); border:1px solid var(--line); border-radius:8px; font-family:var(--mono); font-size:.85rem; padding:12px; resize:vertical;}
+.exercise .ex-controls{display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;}
+.exercise .ex-feedback{margin-top:10px; font-family:var(--mono); font-size:.85rem; padding:10px 12px; border-radius:6px; display:none;}
+.exercise .ex-feedback.show{display:block;}
+.exercise .ex-feedback.ok{background:rgba(95,191,138,0.1); border:1px solid var(--green); color:var(--green);}
+.exercise .ex-feedback.bad{background:rgba(240,101,94,0.1); border:1px solid var(--red); color:var(--red);}
+
+.playground{display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin:14px 0;}
+@media(max-width:700px){.playground{grid-template-columns:1fr;}}
+.pg-controls{background:var(--surface); padding:18px;}
+.pg-output{background:#080B10; padding:18px; font-family:var(--mono); font-size:.85rem;}
+.pg-controls label{display:block; font-family:var(--mono); font-size:.78rem; color:var(--muted); margin:10px 0 4px;}
+.pg-controls input[type=range]{width:100%;}
+.pg-controls select, .pg-controls input[type=text]{width:100%; background:#080B10; border:1px solid var(--line); color:var(--text); padding:8px; border-radius:6px; font-family:var(--mono); font-size:.82rem;}
+
+.quiz-wrap{background:var(--bg-alt); border:1px solid var(--line); border-radius:var(--radius); padding:26px; margin-top:36px;}
+.quiz-wrap h3{color:var(--text); font-size:1.15rem; display:flex; align-items:center; gap:10px;}
+.quiz-progress{font-family:var(--mono); font-size:.75rem; color:var(--dim); margin-bottom:18px;}
+.quiz-q{margin-bottom:24px; padding-bottom:22px; border-bottom:1px solid var(--line);}
+.quiz-q:last-of-type{border-bottom:none;}
+.quiz-q p.qtext{color:var(--text); font-weight:600; margin-bottom:12px;}
+.quiz-opts{display:grid; gap:8px;}
+.quiz-opt{text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:11px 14px; color:var(--text); font-size:.9rem; display:flex; gap:10px; align-items:flex-start; transition:all .15s ease;}
+.quiz-opt:hover:not(:disabled){border-color:var(--violet);}
+.quiz-opt .opt-letter{font-family:var(--mono); color:var(--dim); flex-shrink:0;}
+.quiz-opt.correct{border-color:var(--green); background:rgba(95,191,138,0.1);}
+.quiz-opt.incorrect{border-color:var(--red); background:rgba(240,101,94,0.1);}
+.quiz-opt:disabled{cursor:default;}
+.quiz-explain{margin-top:10px; font-size:.85rem; padding:10px 12px; border-radius:6px; background:var(--surface); border:1px solid var(--line); color:var(--muted); display:none;}
+.quiz-explain.show{display:block;}
+.quiz-summary{text-align:center; padding:24px; border-radius:var(--radius); margin-top:10px; background:var(--surface); border:1px solid var(--line); display:none;}
+.quiz-summary.show{display:block;}
+.quiz-summary .score-big{font-family:var(--mono); font-size:2.4rem; color:var(--teal);}
+.quiz-summary p{color:var(--muted); margin-top:6px;}
+
+.final-section{padding:64px 0; border-top:1px solid var(--line);}
+.challenge-box{background:linear-gradient(135deg, rgba(63,214,192,0.08), rgba(156,140,255,0.05)); border:1px solid var(--teal-dim); border-radius:var(--radius); padding:26px;}
+.cheat-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;}
+@media(max-width:700px){.cheat-grid{grid-template-columns:1fr;}}
+.cheat-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+.cheat-card h4{color:var(--violet); font-size:.9rem; margin-bottom:10px;}
+.cheat-card .codebox{margin:0; font-size:.78rem;}
+
+.resource-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:14px 0;}
+@media(max-width:800px){.resource-grid{grid-template-columns:1fr;}}
+.resource-card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px;}
+.resource-card h4{font-family:var(--mono); font-size:.82rem; color:var(--teal); margin-bottom:10px; text-transform:uppercase; letter-spacing:.05em;}
+.resource-card ul{margin:0; padding-left:16px; color:var(--muted); font-size:.86rem;}
+.resource-card li{margin-bottom:6px;}
+
+.keyword-cloud{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0;}
+.keyword-cloud span{font-family:var(--mono); font-size:.78rem; background:var(--surface); border:1px solid var(--line); padding:6px 12px; border-radius:99px; color:var(--text);}
+
+.print-btn-row{display:flex; gap:12px; margin:24px 0; flex-wrap:wrap;}
+footer{padding:40px 0 60px; text-align:center; color:var(--dim); font-family:var(--mono); font-size:.78rem;}
+
+#toast{position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--teal); border-radius:10px; padding:14px 20px; font-family:var(--mono); font-size:.85rem; color:var(--teal); box-shadow:var(--shadow); transform:translateY(120%); opacity:0; transition:all .4s ease; z-index:100; max-width:300px;}
+#toast.show{transform:translateY(0); opacity:1;}
+
+@media print{
+  #progressBar, #moduleNav, .cta-row, .btn, .exercise .ex-controls, #toast{display:none !important;}
+  body{background:#fff; color:#000;}
+  .module{border-top:1px solid #ccc;}
+}
+@keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);}}
+.reveal{animation:fadeUp .5s ease both;}
+</style>
+</head>
+<body>
+
+<div id="progressBar">
+  <div class="progress-inner">
+    <span class="progress-label">PROGRESS</span>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="badge-count" id="badgeCount">⭐ 0 XP</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <section class="hero">
+    <div class="eyebrow">Interactive Learning Studio</div>
+    <h1>Core Machine Learning Concepts</h1>
+    <p class="lead">A complete, hands-on tutorial covering how models actually learn: training, loss functions, overfitting vs. underfitting, and how to properly evaluate a model — with live simulations, diagrams, exercises, and quizzes along the way.</p>
+
+    <div class="terminal reveal">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="term-title">train.py — epoch loop</span>
+      </div>
+      <div class="term-body">
+        <div class="term-line"><span class="prompt">&gt;&gt;&gt;</span> for epoch in range(100):</div>
+        <div class="term-line">&nbsp;&nbsp;&nbsp;&nbsp;predictions = model(X_train)</div>
+        <div class="term-line">&nbsp;&nbsp;&nbsp;&nbsp;loss = loss_fn(predictions, y_train)</div>
+        <div class="term-line">&nbsp;&nbsp;&nbsp;&nbsp;model.update_weights(loss)</div>
+        <div class="term-line term-out">epoch 100 — train_loss: 0.041, val_loss: 0.058<span class="type-cursor"></span></div>
+      </div>
+    </div>
+
+    <div class="grid-4">
+      <div class="info-card"><div class="ic-label">Estimated Time</div><div class="ic-value">≈ 2.5 hours</div></div>
+      <div class="info-card"><div class="ic-label">Modules</div><div class="ic-value">4 progressive</div></div>
+      <div class="info-card"><div class="ic-label">Prerequisites</div><div class="ic-value">Basic algebra, no ML needed</div></div>
+      <div class="info-card"><div class="ic-label">Format</div><div class="ic-value">Read + Simulate + Quiz</div></div>
+    </div>
+
+    <div class="section-block">
+      <h3>Learning Objectives</h3>
+      <ul class="obj-list">
+        <li>Explain what it means for a model to "learn" from data, and identify the roles of features, labels, and parameters.</li>
+        <li>Understand loss functions and how gradient descent uses them to update a model's parameters.</li>
+        <li>Diagnose overfitting and underfitting using the bias-variance tradeoff, and apply regularization to fix them.</li>
+        <li>Evaluate a model correctly using train/validation/test splits, cross-validation, and the right metrics for the task.</li>
+      </ul>
+    </div>
+
+    <div class="section-block">
+      <h3>Expected Outcomes</h3>
+      <p>By the end of this tutorial, you'll be able to reason about why a model performs well or poorly, choose appropriate evaluation metrics, recognize overfitting from a train/validation gap, and describe the training loop of virtually any supervised learning model — regardless of the specific library or framework you later use.</p>
+    </div>
+
+    <div class="reward-box">
+      <div class="reward-icon">🏆</div>
+      <div>
+        <div class="rt">REWARD SYSTEM</div>
+        <div>Earn <strong>10 XP</strong> per correct quiz answer, <strong>+25 XP</strong> bonus per module completed, and unlock a <strong>Model Whisperer Badge 🧠</strong> after the Final Challenge. Track it all in the progress bar above.</div>
+      </div>
+    </div>
+
+    <div class="cta-row">
+      <button class="btn primary" onclick="scrollToModule(1)">Start Module 1 →</button>
+      <button class="btn" onclick="resetProgress()">Reset Progress</button>
+    </div>
+  </section>
+
+  <nav id="moduleNav">
+    <div class="nav-pill active unlocked" data-mod="1" onclick="scrollToModule(1)">① What Is Training?</div>
+    <div class="nav-pill" data-mod="2" onclick="scrollToModule(2)"><span class="lock">🔒</span> Loss &amp; Optimization</div>
+    <div class="nav-pill" data-mod="3" onclick="scrollToModule(3)"><span class="lock">🔒</span> Over/Underfitting</div>
+    <div class="nav-pill" data-mod="4" onclick="scrollToModule(4)"><span class="lock">🔒</span> Evaluation</div>
+  </nav>
+
+  <!-- ============ MODULE 1 ============ -->
+  <section class="module" id="module-1">
+    <div class="module-head">
+      <div class="mod-num">MODULE 01 · FOUNDATIONAL</div>
+      <h2>What Does It Mean for a Model to "Learn"?</h2>
+      <p class="mod-sub">Before loss functions or optimizers make sense, you need a clear picture of what's actually happening: data goes in, a model makes predictions, and something adjusts it to be less wrong next time.</p>
+    </div>
+
+    <div class="section-block">
+      <h3>Explanation <span class="tag">core concept</span></h3>
+      <p>A supervised ML problem starts with a dataset of examples. Each example has <strong>features</strong> (the inputs, e.g. square footage, bedrooms) and a <strong>label</strong> (the correct answer, e.g. house price). A <strong>model</strong> is a function with adjustable internal numbers called <strong>parameters</strong> (or weights) that maps features to a prediction. "Training" means repeatedly showing the model examples, measuring how wrong its predictions are, and nudging the parameters to reduce that wrongness — one small step at a time.</p>
+      <div class="codebox">
+<span class="cmt"># the mental model of one training example</span><br>
+features = {<span class="c1">"sqft"</span>: 1500, <span class="c1">"bedrooms"</span>: 3}<br>
+label = 320000&nbsp;&nbsp;<span class="cmt"># true price</span><br><br>
+prediction = model.predict(features)&nbsp;<span class="cmt"># e.g. 298000</span><br>
+error = label - prediction&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="cmt"># 22000, model was too low</span><br>
+model.adjust_parameters(error)&nbsp;<span class="cmt"># nudge toward correct</span>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Analogy</h3>
+      <div class="analogy-box">
+        <div class="al-label">Think of it like…</div>
+        <p style="margin:0;">Training a model is like learning to throw darts blindfolded, with a friend telling you only "too far left" or "too far right" after each throw. You never see the board directly — you just keep adjusting your aim based on feedback, throw after throw, until your errors shrink. Parameters are your "aim"; the feedback is the loss.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Diagram — The Training Loop</h3>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="arrow1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#9C8CFF"/></marker>
+          </defs>
+          <g font-family="monospace" font-size="12">
+            <rect x="20" y="85" width="130" height="50" rx="8" fill="#1A1F2B" stroke="#3FD6C0"/>
+            <text x="85" y="115" text-anchor="middle" fill="#3FD6C0">Data (X, y)</text>
+            <rect x="200" y="85" width="130" height="50" rx="8" fill="#1A1F2B" stroke="#FFB454"/>
+            <text x="265" y="115" text-anchor="middle" fill="#FFB454">Model predicts</text>
+            <rect x="380" y="85" width="130" height="50" rx="8" fill="#1A1F2B" stroke="#F0655E"/>
+            <text x="445" y="115" text-anchor="middle" fill="#F0655E">Compute loss</text>
+            <rect x="380" y="10" width="130" height="45" rx="8" fill="#1A1F2B" stroke="#9C8CFF"/>
+            <text x="445" y="37" text-anchor="middle" fill="#9C8CFF">Update params</text>
+            <line x1="150" y1="110" x2="200" y2="110" stroke="#9C8CFF" marker-end="url(#arrow1)"/>
+            <line x1="330" y1="110" x2="380" y2="110" stroke="#9C8CFF" marker-end="url(#arrow1)"/>
+            <line x1="445" y1="85" x2="445" y2="55" stroke="#9C8CFF" marker-end="url(#arrow1)"/>
+            <line x1="380" y1="32" x2="265" y2="85" stroke="#9C8CFF" marker-end="url(#arrow1)"/>
+            <text x="510" y="170" fill="#616B85" font-size="11">repeat for many epochs until loss stops improving</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Comparison — Features vs. Labels vs. Parameters</h3>
+      <table class="compare-table">
+        <tr><th>Term</th><th>What it is</th><th>Who sets it</th></tr>
+        <tr><td>Features</td><td>Input measurements describing an example</td><td>Given in the dataset</td></tr>
+        <tr><td>Label</td><td>The correct answer for that example</td><td>Given in the dataset (supervised learning)</td></tr>
+        <tr><td>Parameters</td><td>Internal numbers the model uses to compute predictions</td><td>Learned automatically during training</td></tr>
+      </table>
+    </div>
+
+    <div class="section-block">
+      <h3>Interactive Element — Tune a Tiny Model by Hand</h3>
+      <div class="playground">
+        <div class="pg-controls">
+          <label for="pgSlope">slope (weight)</label>
+          <input type="range" id="pgSlope" min="0" max="200" value="100" oninput="updateTinyModel()">
+          <label for="pgIntercept">intercept (bias)</label>
+          <input type="range" id="pgIntercept" min="0" max="100" value="20" oninput="updateTinyModel()">
+        </div>
+        <div class="pg-output" id="pgTinyOutput">—</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Practical Exercise</h3>
+      <div class="exercise">
+        <p>A model predicts a house costs $280,000 but the true price (label) is $310,000. Is the model's error positive or negative if computed as <code>label - prediction</code>, and what does that tell you about the direction to adjust?</p>
+        <textarea id="ex1" placeholder="Your answer"></textarea>
+        <div class="ex-controls">
+          <button class="btn primary" onclick="checkExercise('ex1', ['positive'], 'ex1fb')">Check Answer</button>
+        </div>
+        <div class="ex-feedback" id="ex1fb"></div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Common Misconceptions</h3>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"The model 'remembers' each example like a lookup table." A trained model doesn't store examples — it stores parameters that generalize a pattern across all examples it saw, which is why it can predict on data it has never seen.</p>
+      </div>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"More parameters always means a smarter model." More parameters increase capacity to fit patterns, but without enough data or the right constraints, extra capacity leads to memorizing noise instead of learning real structure — you'll see this in Module 3.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Key Takeaways</h3>
+      <div class="takeaways">
+        <ul>
+          <li>Features are inputs, labels are correct answers, parameters are what the model actually learns.</li>
+          <li>Training is a repeated loop: predict, measure error, adjust parameters, repeat.</li>
+          <li>A trained model generalizes a pattern — it doesn't memorize a lookup table.</li>
+          <li>Model capacity (parameter count) is a double-edged sword, covered further in Module 3.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="quiz-wrap" id="quiz-1">
+      <h3>📝 Module 1 Checkpoint</h3>
+      <div class="quiz-progress" id="quiz-1-progress">0 of 4 answered</div>
+      <div id="quiz-1-questions"></div>
+      <div class="quiz-summary" id="quiz-1-summary">
+        <div class="score-big" id="quiz-1-score">0/4</div>
+        <p id="quiz-1-msg"></p>
+        <button class="btn primary" onclick="unlockModule(2)">Unlock Module 2 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODULE 2 ============ -->
+  <section class="module hidden" id="module-2">
+    <div class="module-head">
+      <div class="mod-num">MODULE 02 · APPLIED</div>
+      <h2>Loss Functions &amp; Optimization</h2>
+      <p class="mod-sub">"Wrongness" needs a precise number before a computer can minimize it. That number is the loss — and gradient descent is the standard recipe for shrinking it.</p>
+    </div>
+
+    <div class="section-block">
+      <h3>Explanation <span class="tag">core concept</span></h3>
+      <p>A <strong>loss function</strong> converts prediction error into a single number to minimize. For regression, <strong>Mean Squared Error (MSE)</strong> squares each error (penalizing large mistakes heavily) and averages them. For classification, <strong>Cross-Entropy Loss</strong> penalizes confident wrong predictions much more than uncertain ones. <strong>Gradient descent</strong> is the optimization algorithm: it computes the slope (gradient) of the loss with respect to each parameter, and nudges parameters in the direction that decreases loss, scaled by a <strong>learning rate</strong>.</p>
+      <div class="codebox">
+<span class="cmt"># Mean Squared Error, conceptually</span><br>
+<span class="c2">def</span> mse(predictions, labels):<br>
+&nbsp;&nbsp;&nbsp;&nbsp;errors = [(p - y) ** 2 <span class="c2">for</span> p, y <span class="c2">in</span> zip(predictions, labels)]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="c2">return</span> sum(errors) / len(errors)<br><br>
+<span class="cmt"># one gradient descent step</span><br>
+weight = weight - learning_rate * gradient
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Analogy</h3>
+      <div class="analogy-box">
+        <div class="al-label">Think of it like…</div>
+        <p style="margin:0;">Gradient descent is like hiking down a foggy mountain to find the lowest valley (minimum loss) with no map — you can only feel the slope under your feet (the gradient) and take a step downhill. The <strong>learning rate</strong> is your stride length: too small and you creep down forever; too large and you might overshoot the valley entirely, or bounce between the slopes.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Diagram — Loss Curve &amp; Gradient Descent Steps</h3>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+          <g font-family="monospace" font-size="11">
+            <path d="M40,180 C150,20 250,10 340,20 C420,28 520,90 600,170" fill="none" stroke="#2B3245" stroke-width="3"/>
+            <circle cx="80" cy="150" r="6" fill="#F0655E"/>
+            <circle cx="150" cy="60" r="6" fill="#FFB454"/>
+            <circle cx="230" cy="16" r="6" fill="#3FD6C0"/>
+            <circle cx="300" cy="15" r="7" fill="#5FBF8A"/>
+            <line x1="80" y1="150" x2="150" y2="60" stroke="#9C8CFF" stroke-dasharray="3,3"/>
+            <line x1="150" y1="60" x2="230" y2="16" stroke="#9C8CFF" stroke-dasharray="3,3"/>
+            <line x1="230" y1="16" x2="300" y2="15" stroke="#9C8CFF" stroke-dasharray="3,3"/>
+            <text x="80" y="170" text-anchor="middle" fill="#F0655E">start</text>
+            <text x="300" y="200" text-anchor="middle" fill="#5FBF8A">minimum loss</text>
+            <text x="20" y="15" fill="#616B85">loss</text>
+            <text x="590" y="200" fill="#616B85">parameter value →</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Comparison — MSE vs. Cross-Entropy</h3>
+      <table class="compare-table">
+        <tr><th>Aspect</th><th>Mean Squared Error</th><th>Cross-Entropy Loss</th></tr>
+        <tr><td>Used for</td><td>Regression (continuous output)</td><td>Classification (categorical output)</td></tr>
+        <tr><td>Penalizes</td><td>Large numeric errors quadratically</td><td>Confident wrong predictions heavily</td></tr>
+        <tr><td>Output range it expects</td><td>Any real number</td><td>Probabilities (0–1)</td></tr>
+      </table>
+    </div>
+
+    <div class="section-block">
+      <h3>Interactive Element — Learning Rate Simulator</h3>
+      <div class="playground">
+        <div class="pg-controls">
+          <label for="pgLR">learning rate</label>
+          <input type="range" id="pgLR" min="1" max="150" value="30" oninput="updateLRSim()">
+          <label for="pgEpochs">epochs</label>
+          <input type="range" id="pgEpochs" min="1" max="20" value="8" oninput="updateLRSim()">
+        </div>
+        <div class="pg-output" id="pgLROutput">—</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Practical Exercise</h3>
+      <div class="exercise">
+        <p>You train a model and the loss oscillates wildly between epochs instead of steadily decreasing. What hyperparameter is the most likely culprit, and should you increase or decrease it?</p>
+        <textarea id="ex2" placeholder="Your answer"></textarea>
+        <div class="ex-controls">
+          <button class="btn primary" onclick="checkExercise('ex2', ['learning rate'], 'ex2fb')">Check Answer</button>
+        </div>
+        <div class="ex-feedback" id="ex2fb"></div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Common Misconceptions</h3>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"A lower learning rate is always safer and better." Too low a learning rate can make training impractically slow, or get permanently stuck in a shallow local dip that a slightly larger step would have escaped.</p>
+      </div>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"Loss and accuracy always move together." Loss can keep decreasing slightly while accuracy plateaus or even wobbles, because loss measures confidence/calibration, not just whether the final prediction was correct.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Key Takeaways</h3>
+      <div class="takeaways">
+        <ul>
+          <li>The loss function turns prediction error into a single number the optimizer tries to minimize.</li>
+          <li>MSE suits regression; Cross-Entropy suits classification.</li>
+          <li>Gradient descent repeatedly steps parameters downhill along the loss surface.</li>
+          <li>The learning rate controls step size — too high causes instability, too low causes painfully slow (or stuck) training.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="quiz-wrap" id="quiz-2">
+      <h3>📝 Module 2 Checkpoint</h3>
+      <div class="quiz-progress" id="quiz-2-progress">0 of 4 answered</div>
+      <div id="quiz-2-questions"></div>
+      <div class="quiz-summary" id="quiz-2-summary">
+        <div class="score-big" id="quiz-2-score">0/4</div>
+        <p id="quiz-2-msg"></p>
+        <button class="btn primary" onclick="unlockModule(3)">Unlock Module 3 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODULE 3 ============ -->
+  <section class="module hidden" id="module-3">
+    <div class="module-head">
+      <div class="mod-num">MODULE 03 · DIAGNOSTIC</div>
+      <h2>Overfitting, Underfitting &amp; the Bias-Variance Tradeoff</h2>
+      <p class="mod-sub">A model that fits the training data perfectly isn't necessarily good — it might have simply memorized noise. This module teaches you to spot the difference.</p>
+    </div>
+
+    <div class="section-block">
+      <h3>Explanation <span class="tag">core concept</span></h3>
+      <p><strong>Underfitting</strong> happens when a model is too simple to capture the real pattern — high error on both training and validation data. <strong>Overfitting</strong> happens when a model is complex enough to memorize noise in the training set — very low training error, but high validation error. This is the <strong>bias-variance tradeoff</strong>: high bias means the model makes overly simplistic assumptions (underfitting); high variance means the model is overly sensitive to the specific training data (overfitting). <strong>Regularization</strong> (like L2 penalty or dropout) intentionally constrains a model to reduce variance.</p>
+      <div class="codebox">
+<span class="cmt"># symptom pattern in metrics</span><br>
+underfitting:&nbsp; train_loss = 0.42, val_loss = 0.45&nbsp;<span class="cmt"># both high</span><br>
+good_fit:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;train_loss = 0.09, val_loss = 0.11&nbsp;<span class="cmt"># close &amp; low</span><br>
+overfitting:&nbsp;&nbsp; train_loss = 0.02, val_loss = 0.35&nbsp;<span class="cmt"># big gap</span>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Analogy</h3>
+      <div class="analogy-box">
+        <div class="al-label">Think of it like…</div>
+        <p style="margin:0;">Underfitting is a student who only learned one vague rule for every exam question and gets many wrong, even on practice tests. Overfitting is a student who memorized the exact practice test answers word-for-word — they'll ace the practice test (training data) but flounder on the real exam (validation data) because they never learned the underlying concept, just the specific examples.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Diagram — Underfit vs. Good Fit vs. Overfit</h3>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg">
+          <g font-family="monospace" font-size="11">
+            <!-- underfit -->
+            <g transform="translate(10,10)">
+              <rect x="0" y="0" width="190" height="150" fill="#1A1F2B" stroke="#2B3245"/>
+              <line x1="10" y1="120" x2="180" y2="70" stroke="#F0655E" stroke-width="2"/>
+              <circle cx="30" cy="100" r="3" fill="#EAEDF3"/><circle cx="60" cy="60" r="3" fill="#EAEDF3"/>
+              <circle cx="90" cy="110" r="3" fill="#EAEDF3"/><circle cx="120" cy="50" r="3" fill="#EAEDF3"/>
+              <circle cx="150" cy="90" r="3" fill="#EAEDF3"/><circle cx="170" cy="40" r="3" fill="#EAEDF3"/>
+              <text x="95" y="168" text-anchor="middle" fill="#F0655E">underfit (high bias)</text>
+            </g>
+            <!-- good fit -->
+            <g transform="translate(225,10)">
+              <rect x="0" y="0" width="190" height="150" fill="#1A1F2B" stroke="#2B3245"/>
+              <path d="M10,110 C50,60 90,100 130,55 C150,35 170,50 180,40" fill="none" stroke="#5FBF8A" stroke-width="2"/>
+              <circle cx="30" cy="100" r="3" fill="#EAEDF3"/><circle cx="60" cy="60" r="3" fill="#EAEDF3"/>
+              <circle cx="90" cy="110" r="3" fill="#EAEDF3"/><circle cx="120" cy="50" r="3" fill="#EAEDF3"/>
+              <circle cx="150" cy="90" r="3" fill="#EAEDF3"/><circle cx="170" cy="40" r="3" fill="#EAEDF3"/>
+              <text x="95" y="168" text-anchor="middle" fill="#5FBF8A">good fit</text>
+            </g>
+            <!-- overfit -->
+            <g transform="translate(440,10)">
+              <rect x="0" y="0" width="190" height="150" fill="#1A1F2B" stroke="#2B3245"/>
+              <path d="M10,110 C20,60 40,105 60,60 C75,110 100,45 120,50 C135,115 150,35 170,40" fill="none" stroke="#FFB454" stroke-width="2"/>
+              <circle cx="30" cy="100" r="3" fill="#EAEDF3"/><circle cx="60" cy="60" r="3" fill="#EAEDF3"/>
+              <circle cx="90" cy="110" r="3" fill="#EAEDF3"/><circle cx="120" cy="50" r="3" fill="#EAEDF3"/>
+              <circle cx="150" cy="90" r="3" fill="#EAEDF3"/><circle cx="170" cy="40" r="3" fill="#EAEDF3"/>
+              <text x="95" y="168" text-anchor="middle" fill="#FFB454">overfit (high variance)</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Comparison — Underfitting vs. Overfitting</h3>
+      <table class="compare-table">
+        <tr><th>Aspect</th><th>Underfitting</th><th>Overfitting</th></tr>
+        <tr><td>Training error</td><td>High</td><td>Very low</td></tr>
+        <tr><td>Validation error</td><td>High (similar to training)</td><td>High (much worse than training)</td></tr>
+        <tr><td>Root cause</td><td>Model too simple / undertrained</td><td>Model too complex / overtrained on limited data</td></tr>
+        <tr><td>Fix</td><td>Increase capacity, train longer, add features</td><td>Regularize, add data, reduce capacity, early stopping</td></tr>
+      </table>
+    </div>
+
+    <div class="section-block">
+      <h3>Interactive Element — Model Complexity Slider</h3>
+      <div class="playground">
+        <div class="pg-controls">
+          <label for="pgComplexity">model complexity</label>
+          <input type="range" id="pgComplexity" min="1" max="10" value="5" oninput="updateComplexitySim()">
+        </div>
+        <div class="pg-output" id="pgComplexityOutput">—</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Practical Exercise</h3>
+      <div class="exercise">
+        <p>Training loss is 0.03 and validation loss is 0.41. Is this model underfitting or overfitting, and name one concrete fix?</p>
+        <textarea id="ex3" placeholder="Your answer"></textarea>
+        <div class="ex-controls">
+          <button class="btn primary" onclick="checkExercise('ex3', ['overfit'], 'ex3fb')">Check Answer</button>
+        </div>
+        <div class="ex-feedback" id="ex3fb"></div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Common Misconceptions</h3>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"Zero training error means the model is great." Near-zero training error combined with much worse validation error is a classic overfitting signature, not a sign of success.</p>
+      </div>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"Adding more layers/parameters always improves a model." More capacity only helps if you also have enough data and regularization to keep variance in check — otherwise it just makes overfitting worse.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Key Takeaways</h3>
+      <div class="takeaways">
+        <ul>
+          <li>Underfitting = high error everywhere; overfitting = low training error, high validation error.</li>
+          <li>The bias-variance tradeoff explains this: simple models are high-bias, complex models are high-variance.</li>
+          <li>Regularization, more data, and early stopping are standard tools to fight overfitting.</li>
+          <li>A shrinking training loss alone is not proof of a good model — always check validation performance too.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="quiz-wrap" id="quiz-3">
+      <h3>📝 Module 3 Checkpoint</h3>
+      <div class="quiz-progress" id="quiz-3-progress">0 of 4 answered</div>
+      <div id="quiz-3-questions"></div>
+      <div class="quiz-summary" id="quiz-3-summary">
+        <div class="score-big" id="quiz-3-score">0/4</div>
+        <p id="quiz-3-msg"></p>
+        <button class="btn primary" onclick="unlockModule(4)">Unlock Module 4 →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODULE 4 ============ -->
+  <section class="module hidden" id="module-4">
+    <div class="module-head">
+      <div class="mod-num">MODULE 04 · MASTERY</div>
+      <h2>Evaluating a Model Properly</h2>
+      <p class="mod-sub">A model is only as trustworthy as its evaluation. This module covers how to split data correctly and which metric actually answers your real-world question.</p>
+    </div>
+
+    <div class="section-block">
+      <h3>Explanation <span class="tag">core concept</span></h3>
+      <p>Data is typically split into a <strong>training set</strong> (to fit parameters), a <strong>validation set</strong> (to tune hyperparameters and catch overfitting during development), and a held-out <strong>test set</strong> (touched only once, at the very end, for an honest final score). <strong>K-fold cross-validation</strong> rotates which chunk of data is used for validation across k rounds, giving a more reliable estimate with limited data. For classification, <strong>accuracy</strong> can be misleading on imbalanced data — <strong>precision</strong>, <strong>recall</strong>, and <strong>F1-score</strong>, read from a <strong>confusion matrix</strong>, give a fuller picture.</p>
+      <div class="codebox">
+<span class="cmt"># confusion matrix components for a binary classifier</span><br>
+TP&nbsp;(true positive)&nbsp; — predicted yes, actually yes<br>
+FP&nbsp;(false positive) — predicted yes, actually no<br>
+FN&nbsp;(false negative) — predicted no, actually yes<br>
+TN&nbsp;(true negative)&nbsp; — predicted no, actually no<br><br>
+precision = TP / (TP + FP)&nbsp;&nbsp;<span class="cmt"># of predicted positives, % correct</span><br>
+recall&nbsp;&nbsp;&nbsp;&nbsp;= TP / (TP + FN)&nbsp;&nbsp;<span class="cmt"># of actual positives, % caught</span>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Analogy</h3>
+      <div class="analogy-box">
+        <div class="al-label">Think of it like…</div>
+        <p style="margin:0;">Train/validation/test is like studying for an exam: the <strong>training set</strong> is your textbook, the <strong>validation set</strong> is practice quizzes you use to adjust your study strategy, and the <strong>test set</strong> is the real final exam you only take once — peeking at it early (or repeatedly tuning based on it) invalidates the honest measure of what you actually learned. Precision vs. recall is a smoke detector: high recall catches every real fire (few missed), high precision rarely cries wolf on toast (few false alarms) — tuning one often costs the other.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Diagram — Confusion Matrix</h3>
+      <div class="diagram-wrap">
+        <svg viewBox="0 0 480 260" xmlns="http://www.w3.org/2000/svg">
+          <g font-family="monospace" font-size="12">
+            <text x="240" y="20" text-anchor="middle" fill="#8D96AC" font-size="11">predicted</text>
+            <text x="20" y="140" text-anchor="middle" fill="#8D96AC" font-size="11" transform="rotate(-90 20,140)">actual</text>
+            <text x="180" y="45" text-anchor="middle" fill="#8D96AC">positive</text>
+            <text x="330" y="45" text-anchor="middle" fill="#8D96AC">negative</text>
+            <text x="110" y="95" text-anchor="middle" fill="#8D96AC">positive</text>
+            <text x="110" y="200" text-anchor="middle" fill="#8D96AC">negative</text>
+
+            <rect x="120" y="55" width="120" height="80" fill="#1A1F2B" stroke="#5FBF8A" stroke-width="2"/>
+            <text x="180" y="90" text-anchor="middle" fill="#5FBF8A">TP</text>
+            <text x="180" y="108" text-anchor="middle" fill="#616B85" font-size="10">true positive</text>
+
+            <rect x="240" y="55" width="120" height="80" fill="#1A1F2B" stroke="#F0655E" stroke-width="2"/>
+            <text x="300" y="90" text-anchor="middle" fill="#F0655E">FN</text>
+            <text x="300" y="108" text-anchor="middle" fill="#616B85" font-size="10">false negative</text>
+
+            <rect x="120" y="135" width="120" height="80" fill="#1A1F2B" stroke="#F0655E" stroke-width="2"/>
+            <text x="180" y="170" text-anchor="middle" fill="#F0655E">FP</text>
+            <text x="180" y="188" text-anchor="middle" fill="#616B85" font-size="10">false positive</text>
+
+            <rect x="240" y="135" width="120" height="80" fill="#1A1F2B" stroke="#5FBF8A" stroke-width="2"/>
+            <text x="300" y="170" text-anchor="middle" fill="#5FBF8A">TN</text>
+            <text x="300" y="188" text-anchor="middle" fill="#616B85" font-size="10">true negative</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Comparison — Accuracy vs. Precision vs. Recall vs. F1</h3>
+      <table class="compare-table">
+        <tr><th>Metric</th><th>Answers</th><th>Best used when</th></tr>
+        <tr><td>Accuracy</td><td>% of all predictions correct</td><td>Classes are roughly balanced</td></tr>
+        <tr><td>Precision</td><td>Of predicted positives, how many were right?</td><td>False positives are costly (e.g. spam filter)</td></tr>
+        <tr><td>Recall</td><td>Of actual positives, how many were caught?</td><td>False negatives are costly (e.g. disease screening)</td></tr>
+        <tr><td>F1-score</td><td>Harmonic mean of precision &amp; recall</td><td>You need one balanced number for both</td></tr>
+      </table>
+    </div>
+
+    <div class="section-block">
+      <h3>Interactive Element — Precision/Recall Calculator</h3>
+      <div class="playground">
+        <div class="pg-controls">
+          <label for="pgTP">True Positives</label>
+          <input type="range" id="pgTP" min="0" max="100" value="70" oninput="updateConfMatrix()">
+          <label for="pgFP">False Positives</label>
+          <input type="range" id="pgFP" min="0" max="100" value="15" oninput="updateConfMatrix()">
+          <label for="pgFN">False Negatives</label>
+          <input type="range" id="pgFN" min="0" max="100" value="10" oninput="updateConfMatrix()">
+        </div>
+        <div class="pg-output" id="pgConfOutput">—</div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Practical Exercise</h3>
+      <div class="exercise">
+        <p>You're building a cancer screening classifier where missing a real case is far worse than a false alarm. Should you optimize primarily for precision or recall?</p>
+        <textarea id="ex4" placeholder="Your answer"></textarea>
+        <div class="ex-controls">
+          <button class="btn primary" onclick="checkExercise('ex4', ['recall'], 'ex4fb')">Check Answer</button>
+        </div>
+        <div class="ex-feedback" id="ex4fb"></div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Common Misconceptions</h3>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"High accuracy always means a good model." On an imbalanced dataset (e.g. 99% negative class), a model that always predicts "negative" scores 99% accuracy while being useless — always check precision/recall too.</p>
+      </div>
+      <div class="misconception">
+        <div class="mc-label">Misconception</div>
+        <p style="margin:0;">"It's fine to tune hyperparameters based on test set performance." That silently turns your test set into another validation set and inflates your sense of real-world performance — the test set should be touched only once, at the end.</p>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Key Takeaways</h3>
+      <div class="takeaways">
+        <ul>
+          <li>Use separate train/validation/test sets; never tune decisions based on test performance.</li>
+          <li>K-fold cross-validation gives a more robust estimate when data is limited.</li>
+          <li>Accuracy can mislead on imbalanced data — precision, recall, and F1 give a fuller picture.</li>
+          <li>Choose your metric based on which type of error (false positive vs. false negative) is costlier for your problem.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="quiz-wrap" id="quiz-4">
+      <h3>📝 Module 4 Checkpoint</h3>
+      <div class="quiz-progress" id="quiz-4-progress">0 of 4 answered</div>
+      <div id="quiz-4-questions"></div>
+      <div class="quiz-summary" id="quiz-4-summary">
+        <div class="score-big" id="quiz-4-score">0/4</div>
+        <p id="quiz-4-msg"></p>
+        <button class="btn primary" onclick="scrollToFinal()">Continue to Final Challenge →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL ============ -->
+  <section class="final-section hidden" id="finalSection">
+    <div class="eyebrow">Final Stretch</div>
+    <h2 style="font-size:1.65rem;">Final Practical Challenge</h2>
+
+    <div class="challenge-box">
+      <p style="color:var(--text); margin-bottom:14px;"><strong>Diagnose it:</strong> You train three versions of a model on the same house-price dataset and record these results. For each, decide whether it's underfitting, a good fit, or overfitting, and propose one concrete fix.</p>
+      <div class="codebox">
+Model A — train_loss: 0.38, val_loss: 0.40<br>
+Model B — train_loss: 0.01, val_loss: 0.52<br>
+Model C — train_loss: 0.08, val_loss: 0.10
+      </div>
+      <div class="exercise" style="margin-top:6px;">
+        <p>Write your diagnosis for all three models (A, B, C):</p>
+        <textarea id="finalEx" placeholder="Model A is..., Model B is..., Model C is..."></textarea>
+        <div class="ex-controls">
+          <button class="btn primary" onclick="checkFinal()">Check My Diagnosis</button>
+        </div>
+        <div class="ex-feedback" id="finalExfb"></div>
+      </div>
+    </div>
+
+    <div class="section-block" style="margin-top:40px;">
+      <h3>Cheat Sheet</h3>
+      <div class="cheat-grid">
+        <div class="cheat-card">
+          <h4>Training Loop</h4>
+          <div class="codebox">predict → loss → gradient<br>→ update params → repeat</div>
+        </div>
+        <div class="cheat-card">
+          <h4>Loss Functions</h4>
+          <div class="codebox">MSE → regression<br>Cross-Entropy → classification</div>
+        </div>
+        <div class="cheat-card">
+          <h4>Fit Diagnosis</h4>
+          <div class="codebox">high train + high val = underfit<br>low train + high val = overfit<br>low train + low val = good fit</div>
+        </div>
+        <div class="cheat-card">
+          <h4>Metrics</h4>
+          <div class="codebox">precision = TP/(TP+FP)<br>recall = TP/(TP+FN)<br>F1 = harmonic mean of both</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Summary Notes</h3>
+      <div class="takeaways">
+        <ul>
+          <li>Training repeatedly adjusts a model's parameters to reduce a measured loss.</li>
+          <li>Gradient descent uses the loss's slope and a learning rate to update parameters step by step.</li>
+          <li>The bias-variance tradeoff explains underfitting (too simple) and overfitting (too sensitive to training data).</li>
+          <li>Rigorous evaluation with train/validation/test splits and task-appropriate metrics is what makes a model's reported performance trustworthy.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Continue Learning</h3>
+      <div class="resource-grid">
+        <div class="resource-card">
+          <h4>📚 Books</h4>
+          <ul>
+            <li>"Hands-On Machine Learning" — Aurélien Géron</li>
+            <li>"An Introduction to Statistical Learning" — James, Witten, Hastie, Tibshirani</li>
+            <li>"Deep Learning" — Goodfellow, Bengio, Courville</li>
+          </ul>
+        </div>
+        <div class="resource-card">
+          <h4>📖 Documentation</h4>
+          <ul>
+            <li>scikit-learn User Guide</li>
+            <li>PyTorch official tutorials</li>
+            <li>Google's Machine Learning Crash Course</li>
+          </ul>
+        </div>
+        <div class="resource-card">
+          <h4>🔬 Research &amp; Papers</h4>
+          <ul>
+            <li>"A Few Useful Things to Know About Machine Learning" — Pedro Domingos</li>
+            <li>"Understanding Deep Learning Requires Rethinking Generalization" — Zhang et al.</li>
+          </ul>
+        </div>
+        <div class="resource-card">
+          <h4>👥 Communities</h4>
+          <ul>
+            <li>r/MachineLearning</li>
+            <li>Kaggle Discussions</li>
+            <li>Fast.ai forums</li>
+          </ul>
+        </div>
+        <div class="resource-card">
+          <h4>💻 Practice Platforms</h4>
+          <ul>
+            <li>Kaggle Competitions &amp; Datasets</li>
+            <li>Google Colab notebooks</li>
+            <li>scikit-learn built-in datasets for practice</li>
+          </ul>
+        </div>
+        <div class="resource-card">
+          <h4>🔎 Search Keywords</h4>
+          <div class="keyword-cloud">
+            <span>bias-variance tradeoff</span><span>gradient descent explained</span><span>k-fold cross-validation</span><span>regularization L1 L2</span><span>confusion matrix metrics</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <h3>Additional AI Prompts for Further Learning</h3>
+      <div class="takeaways">
+        <ul>
+          <li>"Walk me through backpropagation using a simple 2-layer neural network example."</li>
+          <li>"Compare L1 and L2 regularization mathematically and explain when to use each."</li>
+          <li>"Explain ROC curves and AUC, and how they relate to precision and recall."</li>
+          <li>"Give me 5 progressively harder exercises diagnosing overfitting from loss curves."</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="print-btn-row">
+      <button class="btn primary" onclick="window.print()">🖨️ Print / Save Notes as PDF</button>
+      <button class="btn" onclick="scrollToModule(1)">↺ Review from Module 1</button>
+    </div>
+  </section>
+
+  <footer>Interactive Learning Studio · Core Machine Learning Concepts · Built for focused, self-paced mastery</footer>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'ils_ml_core_concepts_progress';
+let state = { xp: 0, unlocked: 1, quizScores: {1:null,2:null,3:null,4:null}, quizAnswers: {1:{},2:{},3:{},4:{}} };
+
+function loadState(){ try{ const raw = localStorage.getItem(STORAGE_KEY); if(raw){ state = JSON.parse(raw); } }catch(e){} }
+function saveState(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+function resetProgress(){ if(!confirm('Reset all progress and XP?')) return; localStorage.removeItem(STORAGE_KEY); location.reload(); }
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+function updateProgressUI(){
+  let completed = 0;
+  for(let i=1;i<=4;i++){ if(state.quizScores[i]!==null) completed++; }
+  const pct = Math.round((completed/4)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('badgeCount').textContent = '⭐ '+state.xp+' XP';
+  for(let i=1;i<=4;i++){
+    const pill = document.querySelector('.nav-pill[data-mod="'+i+'"]');
+    if(i <= state.unlocked){
+      pill.classList.add('unlocked');
+      pill.innerHTML = pill.innerHTML.replace('<span class="lock">🔒</span> ', '');
+    }
+  }
+}
+
+function scrollToModule(n){
+  if(n > state.unlocked){ showToast('🔒 Complete the previous quiz to unlock this module.'); return; }
+  document.querySelectorAll('.module').forEach(m=>m.classList.add('hidden'));
+  const el = document.getElementById('module-'+n);
+  el.classList.remove('hidden'); el.classList.add('reveal');
+  document.querySelectorAll('.nav-pill').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.nav-pill[data-mod="'+n+'"]').classList.add('active');
+  window.scrollTo({top: el.offsetTop - 70, behavior:'smooth'});
+}
+function scrollToFinal(){
+  document.querySelectorAll('.module').forEach(m=>m.classList.add('hidden'));
+  const el = document.getElementById('finalSection');
+  el.classList.remove('hidden'); el.classList.add('reveal');
+  window.scrollTo({top: el.offsetTop - 70, behavior:'smooth'});
+}
+function unlockModule(n){
+  if(state.unlocked < n) state.unlocked = n;
+  state.xp += 25;
+  saveState(); updateProgressUI();
+  showToast('🎉 Module '+n+' unlocked! +25 XP bonus');
+  scrollToModule(n);
+}
+
+function checkExercise(inputId, acceptable, fbId){
+  const val = document.getElementById(inputId).value.trim().toLowerCase();
+  const fb = document.getElementById(fbId);
+  const ok = acceptable.some(a=>val.includes(a));
+  fb.classList.add('show');
+  if(ok){ fb.classList.remove('bad'); fb.classList.add('ok'); fb.textContent = '✓ Correct! Nicely reasoned.'; }
+  else { fb.classList.remove('ok'); fb.classList.add('bad'); fb.textContent = '✗ Not quite. Expected something involving: "'+acceptable[0]+'". Re-read the section above and try again.'; }
+}
+function checkFinal(){
+  const val = document.getElementById('finalEx').value.trim().toLowerCase();
+  const fb = document.getElementById('finalExfb');
+  fb.classList.add('show');
+  const hasA = val.includes('underfit') || val.includes('a is');
+  const hasB = val.includes('overfit');
+  const hasC = val.includes('good') || val.includes('fit well') || val.includes('c is');
+  if(val.length > 20 && (hasA || hasB || hasC)){
+    fb.classList.remove('bad'); fb.classList.add('ok');
+    fb.textContent = '✓ Good diagnosis approach — A (high train & val loss) is underfitting → increase capacity or train longer. B (very low train, high val) is overfitting → regularize or add data. C (both low & close) is a good fit.';
+    showToast('🏆 Model Whisperer Badge earned!');
+    state.xp += 25; saveState(); updateProgressUI();
+  } else {
+    fb.classList.remove('ok'); fb.classList.add('bad');
+    fb.textContent = '✗ Try labeling each model explicitly as underfitting, overfitting, or a good fit, based on the train/val gap.';
+  }
+}
+
+function updateTinyModel(){
+  const slope = parseInt(document.getElementById('pgSlope').value,10);
+  const intercept = parseInt(document.getElementById('pgIntercept').value,10);
+  const sqft = 15; // in hundreds
+  const trueLabel = 320;
+  const prediction = (slope * sqft / 10) + intercept;
+  const error = Math.abs(trueLabel - prediction);
+  document.getElementById('pgTinyOutput').innerHTML =
+    '&gt;&gt;&gt; prediction = slope * sqft + intercept<br>&gt;&gt;&gt; prediction = '+prediction.toFixed(0)+' (k$)<br>&gt;&gt;&gt; true label = 320 (k$)<br><span style="color:'+(error<20?'#5FBF8A':'#F0655E')+';">abs error = '+error.toFixed(0)+' — '+(error<20?'close fit!':'keep adjusting')+'</span>';
+}
+
+function updateLRSim(){
+  const lr = parseInt(document.getElementById('pgLR').value,10);
+  const epochs = parseInt(document.getElementById('pgEpochs').value,10);
+  let out = '';
+  let loss = 1.0;
+  let unstable = lr > 100;
+  for(let e=1;e<=Math.min(epochs,8);e++){
+    if(unstable){
+      loss = loss + (Math.random()*0.4 - 0.15)*(lr/100);
+      loss = Math.max(0.05, loss);
+    } else {
+      loss = loss * (1 - Math.min(0.5, lr/300));
+    }
+    out += 'epoch '+e+' — loss: '+loss.toFixed(3)+'<br>';
+  }
+  let verdict;
+  if(unstable) verdict = '<span style="color:#F0655E;">⚠ learning rate too high — loss oscillating</span>';
+  else if(lr < 10) verdict = '<span style="color:#FFB454;">learning rate low — converging slowly</span>';
+  else verdict = '<span style="color:#5FBF8A;">✓ steady convergence</span>';
+  document.getElementById('pgLROutput').innerHTML = out + verdict;
+}
+
+function updateComplexitySim(){
+  const c = parseInt(document.getElementById('pgComplexity').value,10);
+  const trainLoss = Math.max(0.01, 0.45 - c*0.045);
+  let valLoss;
+  if(c<=4) valLoss = 0.45 - c*0.04;
+  else valLoss = 0.15 + (c-4)*0.045;
+  const gap = valLoss - trainLoss;
+  let verdict;
+  if(c<=3) verdict = '<span style="color:#F0655E;">underfitting — model too simple</span>';
+  else if(c>=8) verdict = '<span style="color:#FFB454;">overfitting — model too complex</span>';
+  else verdict = '<span style="color:#5FBF8A;">good balance</span>';
+  document.getElementById('pgComplexityOutput').innerHTML =
+    '&gt;&gt;&gt; complexity = '+c+'<br>train_loss: '+trainLoss.toFixed(3)+'<br>val_loss: '+valLoss.toFixed(3)+'<br>gap: '+gap.toFixed(3)+'<br>'+verdict;
+}
+
+function updateConfMatrix(){
+  const tp = parseInt(document.getElementById('pgTP').value,10);
+  const fp = parseInt(document.getElementById('pgFP').value,10);
+  const fn = parseInt(document.getElementById('pgFN').value,10);
+  const precision = tp+fp>0 ? tp/(tp+fp) : 0;
+  const recall = tp+fn>0 ? tp/(tp+fn) : 0;
+  const f1 = (precision+recall)>0 ? 2*precision*recall/(precision+recall) : 0;
+  document.getElementById('pgConfOutput').innerHTML =
+    '&gt;&gt;&gt; TP='+tp+' FP='+fp+' FN='+fn+'<br>precision = '+precision.toFixed(2)+'<br>recall&nbsp;&nbsp;&nbsp;&nbsp;= '+recall.toFixed(2)+'<br><span style="color:#3FD6C0;">F1-score&nbsp;&nbsp;= '+f1.toFixed(2)+'</span>';
+}
+
+const quizzes = {
+  1:[
+    {q:'In a housing dataset, "square footage" is an example of a:', opts:['Label','Feature','Parameter','Loss'], correct:1, exp:'Features are the input measurements used to make a prediction; the price would be the label.'},
+    {q:'What does "training" a model actually change?', opts:['The raw dataset','The model\'s internal parameters','The loss function\'s formula','The programming language used'], correct:1, exp:'Training repeatedly adjusts the model\'s internal parameters (weights) to reduce prediction error.'},
+    {q:'Why can a trained model predict on data it has never seen before?', opts:['It memorized a lookup table','It generalizes a learned pattern from training examples','It randomly guesses','It re-reads the training set at prediction time'], correct:1, exp:'A model learns a generalizable pattern via its parameters, rather than storing every example verbatim.'},
+    {q:'If error = label - prediction is a large positive number, the model\'s prediction was:', opts:['Too high','Too low','Exactly correct','Undefined'], correct:1, exp:'A large positive error means the true label exceeded the prediction, so the prediction was too low.'}
+  ],
+  2:[
+    {q:'Which loss function is most appropriate for a regression task predicting house prices?', opts:['Cross-Entropy Loss','Mean Squared Error','Accuracy','Precision'], correct:1, exp:'MSE is designed for continuous numeric outputs, which fits a regression task like price prediction.'},
+    {q:'What does the learning rate control in gradient descent?', opts:['The number of features','The size of each parameter update step','The type of loss function used','The size of the dataset'], correct:1, exp:'The learning rate scales how big a step gradient descent takes toward reducing the loss each iteration.'},
+    {q:'If the loss oscillates wildly instead of decreasing steadily, what should you likely do?', opts:['Increase the learning rate','Decrease the learning rate','Add more features','Switch loss functions'], correct:1, exp:'Oscillating loss is a classic sign the learning rate is too high, causing the optimizer to overshoot the minimum.'},
+    {q:'Cross-Entropy Loss is primarily designed for:', opts:['Regression problems','Classification problems','Clustering problems','Data cleaning'], correct:1, exp:'Cross-Entropy compares predicted probabilities against true class labels, making it suited for classification.'}
+  ],
+  3:[
+    {q:'A model with high error on both training and validation data is:', opts:['Overfitting','Underfitting','Perfectly fit','Impossible to diagnose'], correct:1, exp:'High error everywhere, with training and validation close together, is the signature of underfitting.'},
+    {q:'What is a classic sign of overfitting?', opts:['High training and validation error both','Very low training error but much higher validation error','Validation error lower than training error','Both errors equal to zero'], correct:1, exp:'Overfitting shows as a large gap: the model fits training data very well but fails to generalize to validation data.'},
+    {q:'Which of these is a standard technique to reduce overfitting?', opts:['Removing all regularization','Training for as many epochs as possible regardless of validation loss','Using regularization (e.g. L2 penalty) or gathering more data','Reducing the size of the validation set to zero'], correct:2, exp:'Regularization and more training data both help constrain a model so it generalizes better instead of memorizing noise.'},
+    {q:'High bias in a model most directly corresponds to:', opts:['Overfitting','Underfitting','Perfect generalization','High variance'], correct:1, exp:'High bias means overly simplistic assumptions that fail to capture the real pattern — this is underfitting.'}
+  ],
+  4:[
+    {q:'Why should the test set be used only once, at the very end?', opts:['It has fewer examples than training data','Repeated use for tuning turns it into another validation set and inflates results','Test sets are always mislabeled','It is required by every ML library'], correct:1, exp:'Using the test set to make decisions leaks information, invalidating it as an honest, unbiased final performance check.'},
+    {q:'On a dataset that is 95% one class, why can accuracy be misleading?', opts:['Accuracy cannot be computed on imbalanced data','A model predicting the majority class always scores high accuracy while being useless', 'Accuracy always equals recall', 'Accuracy only works for regression'], correct:1, exp:'A trivial always-majority-class model can score 95% accuracy on such data despite having no real predictive skill on the minority class.'},
+    {q:'If false negatives are far costlier than false positives (e.g. missing a disease case), you should prioritize:', opts:['Precision','Recall','Training speed','Model size'], correct:1, exp:'Recall measures how many actual positives were caught — prioritizing it minimizes costly missed (false negative) cases.'},
+    {q:'What does k-fold cross-validation help with?', opts:['Increasing dataset size artificially','Getting a more reliable performance estimate when data is limited','Replacing the need for a test set entirely','Making training faster'], correct:1, exp:'K-fold cross-validation rotates the validation portion across k splits, averaging results for a more robust performance estimate.'}
+  ]
+};
+
+function renderQuiz(modNum){
+  const data = quizzes[modNum];
+  const container = document.getElementById('quiz-'+modNum+'-questions');
+  container.innerHTML = '';
+  data.forEach((item, qi)=>{
+    const qDiv = document.createElement('div');
+    qDiv.className = 'quiz-q';
+    qDiv.innerHTML = '<p class="qtext">Q'+(qi+1)+'. '+item.q+'</p>';
+    const optsDiv = document.createElement('div');
+    optsDiv.className = 'quiz-opts';
+    const letters = ['A','B','C','D'];
+    item.opts.forEach((opt, oi)=>{
+      const b = document.createElement('button');
+      b.className = 'quiz-opt';
+      b.innerHTML = '<span class="opt-letter">'+letters[oi]+'</span><span>'+opt+'</span>';
+      b.onclick = ()=>answerQuiz(modNum, qi, oi, b, optsDiv);
+      optsDiv.appendChild(b);
+    });
+    qDiv.appendChild(optsDiv);
+    const explain = document.createElement('div');
+    explain.className = 'quiz-explain';
+    explain.id = 'explain-'+modNum+'-'+qi;
+    explain.textContent = item.exp;
+    qDiv.appendChild(explain);
+    container.appendChild(qDiv);
+  });
+}
+
+function answerQuiz(modNum, qIndex, choiceIndex, btnEl, optsDiv){
+  if(state.quizAnswers[modNum][qIndex] !== undefined) return;
+  const item = quizzes[modNum][qIndex];
+  const buttons = optsDiv.querySelectorAll('.quiz-opt');
+  buttons.forEach((b,i)=>{
+    b.disabled = true;
+    if(i === item.correct) b.classList.add('correct');
+    else if(i === choiceIndex) b.classList.add('incorrect');
+  });
+  const isCorrect = choiceIndex === item.correct;
+  state.quizAnswers[modNum][qIndex] = isCorrect;
+  if(isCorrect){ state.xp += 10; showToast('✓ Correct! +10 XP'); }
+  else { showToast('✗ Not quite — check the explanation.'); }
+  document.getElementById('explain-'+modNum+'-'+qIndex).classList.add('show');
+  saveState(); updateProgressUI();
+  checkQuizComplete(modNum);
+}
+
+function checkQuizComplete(modNum){
+  const answered = Object.keys(state.quizAnswers[modNum]).length;
+  document.getElementById('quiz-'+modNum+'-progress').textContent = answered+' of 4 answered';
+  if(answered === 4){
+    const correctCount = Object.values(state.quizAnswers[modNum]).filter(v=>v).length;
+    state.quizScores[modNum] = correctCount;
+    saveState();
+    const summary = document.getElementById('quiz-'+modNum+'-summary');
+    summary.classList.add('show');
+    document.getElementById('quiz-'+modNum+'-score').textContent = correctCount+'/4';
+    let msg;
+    if(correctCount===4) msg = 'Perfect score! You\'ve mastered this module.';
+    else if(correctCount>=3) msg = 'Great work — solid understanding of this module.';
+    else if(correctCount>=2) msg = 'Good effort — consider reviewing the key takeaways above.';
+    else msg = 'Worth another pass through the explanations before moving on.';
+    document.getElementById('quiz-'+modNum+'-msg').textContent = msg;
+    updateProgressUI();
+  }
+}
+
+function init(){
+  loadState();
+  for(let i=1;i<=4;i++) renderQuiz(i);
+  for(let i=1;i<=4;i++){
+    const answers = state.quizAnswers[i];
+    Object.keys(answers).forEach(qi=>{
+      qi = parseInt(qi,10);
+      const item = quizzes[i][qi];
+      const qDiv = document.querySelectorAll('#quiz-'+i+'-questions .quiz-q')[qi];
+      const buttons = qDiv.querySelectorAll('.quiz-opt');
+      buttons.forEach((b,bi)=>{
+        b.disabled = true;
+        if(bi === item.correct) b.classList.add('correct');
+      });
+      document.getElementById('explain-'+i+'-'+qi).classList.add('show');
+    });
+    checkQuizComplete(i);
+  }
+  updateProgressUI();
+  document.querySelectorAll('.module').forEach((m,idx)=>{ if(idx+1 !== 1) m.classList.add('hidden'); });
+  document.querySelector('.nav-pill[data-mod="1"]').classList.add('active');
+
+  updateTinyModel();
+  updateLRSim();
+  updateComplexitySim();
+  updateConfMatrix();
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
