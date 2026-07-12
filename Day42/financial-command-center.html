@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Deck — Personal Financial Command Center</title>
+<style>
+:root{
+  --navy-950:#0b0e1c;
+  --navy-900:#12172b;
+  --navy-800:#1a2038;
+  --navy-700:#232a47;
+  --navy-600:#2e3658;
+  --teal:#2dd4bf;
+  --teal-dim:#1a8f80;
+  --amber:#f5a623;
+  --coral:#ef6461;
+  --ink-0:#edeff7;
+  --ink-1:#c4c9dc;
+  --ink-2:#8b93a8;
+  --line:#2a3150;
+  --radius:14px;
+  --font-display: "Space Grotesk","Avenir Next",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-body: "Inter","Avenir Next",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+[data-theme="light"]{
+  --navy-950:#f4f5fa;
+  --navy-900:#ffffff;
+  --navy-800:#eef0f8;
+  --navy-700:#e3e6f2;
+  --navy-600:#cfd4e8;
+  --ink-0:#171b2e;
+  --ink-1:#3a4162;
+  --ink-2:#6b7290;
+  --line:#dde1f0;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--navy-950);
+  color:var(--ink-0);
+  font-family:var(--font-body);
+  min-height:100vh;
+  transition:background .35s ease, color .35s ease;
+  -webkit-font-smoothing:antialiased;
+}
+@media(prefers-reduced-motion:reduce){ *{animation-duration:.001s !important; transition-duration:.001s !important;} }
+
+/* ---------- layout shell ---------- */
+.shell{ display:grid; grid-template-columns:248px 1fr; min-height:100vh; }
+@media(max-width:920px){ .shell{grid-template-columns:1fr;} }
+
+/* ---------- sidebar ---------- */
+.sidebar{
+  background:var(--navy-900);
+  border-right:1px solid var(--line);
+  padding:26px 18px;
+  position:sticky; top:0; height:100vh; overflow-y:auto;
+  display:flex; flex-direction:column; gap:22px;
+}
+@media(max-width:920px){ .sidebar{position:relative; height:auto; flex-direction:row; overflow-x:auto; align-items:center; padding:14px 16px;} }
+
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:9px;
+  background:conic-gradient(from 220deg, var(--teal), var(--amber), var(--teal));
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-mono); font-weight:700; color:var(--navy-950); font-size:14px;
+  flex-shrink:0;
+}
+.brand-text{ display:flex; flex-direction:column; line-height:1.15; }
+.brand-text b{ font-family:var(--font-display); font-size:15px; letter-spacing:.2px; }
+.brand-text span{ font-size:11px; color:var(--ink-2); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:1px; }
+
+.nav-group{ display:flex; flex-direction:column; gap:2px; }
+@media(max-width:920px){ .nav-group{ flex-direction:row; gap:6px; } }
+.nav-label{ font-size:10.5px; text-transform:uppercase; letter-spacing:1.4px; color:var(--ink-2); font-family:var(--font-mono); margin:14px 10px 6px; }
+@media(max-width:920px){ .nav-label{display:none;} }
+.nav-item{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px; border-radius:9px; cursor:pointer;
+  color:var(--ink-1); font-size:13.5px; font-weight:500;
+  border:1px solid transparent; white-space:nowrap;
+  transition:background .15s, color .15s, border-color .15s;
+}
+.nav-item:hover{ background:var(--navy-800); color:var(--ink-0); }
+.nav-item.active{ background:var(--navy-800); color:var(--teal); border-color:var(--teal-dim); }
+.nav-dot{ width:6px; height:6px; border-radius:50%; background:var(--ink-2); flex-shrink:0; }
+.nav-item.active .nav-dot{ background:var(--teal); box-shadow:0 0 8px var(--teal); }
+
+.sidebar-foot{ margin-top:auto; display:flex; flex-direction:column; gap:10px; }
+@media(max-width:920px){ .sidebar-foot{display:none;} }
+.theme-toggle{
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--navy-800); border:1px solid var(--line); border-radius:10px;
+  padding:8px 12px; cursor:pointer; font-size:12.5px; color:var(--ink-1);
+}
+.switch{ width:34px; height:18px; border-radius:20px; background:var(--navy-600); position:relative; transition:background .2s; }
+.switch::after{ content:''; position:absolute; width:14px; height:14px; border-radius:50%; background:var(--ink-0); top:2px; left:2px; transition:left .2s; }
+[data-theme="light"] .switch{ background:var(--teal); }
+[data-theme="light"] .switch::after{ left:18px; }
+
+/* ---------- main ---------- */
+.main{ padding:28px 34px 80px; max-width:1180px; }
+@media(max-width:640px){ .main{ padding:18px 16px 60px; } }
+
+.topbar{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:26px; flex-wrap:wrap; }
+.topbar h1{ font-family:var(--font-display); font-size:26px; font-weight:600; letter-spacing:.2px; }
+.topbar p{ color:var(--ink-2); font-size:13px; margin-top:4px; }
+.topbar-actions{ display:flex; gap:10px; }
+.btn{
+  font-family:var(--font-body); font-size:13px; font-weight:600; border-radius:9px; border:1px solid var(--line);
+  background:var(--navy-800); color:var(--ink-0); padding:9px 15px; cursor:pointer; transition:all .15s;
+  display:inline-flex; align-items:center; gap:6px;
+}
+.btn:hover{ border-color:var(--teal-dim); color:var(--teal); }
+.btn-primary{ background:var(--teal); color:var(--navy-950); border-color:var(--teal); }
+.btn-primary:hover{ background:#3fe0ca; color:var(--navy-950); }
+
+section.view{ display:none; animation:fadeUp .4s ease; }
+section.view.active{ display:block; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+.grid{ display:grid; gap:16px; }
+.grid-4{ grid-template-columns:repeat(4,1fr); }
+.grid-3{ grid-template-columns:repeat(3,1fr); }
+.grid-2{ grid-template-columns:repeat(2,1fr); }
+@media(max-width:900px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:560px){ .grid-4,.grid-3,.grid-2{grid-template-columns:1fr;} }
+
+.card{
+  background:var(--navy-900); border:1px solid var(--line); border-radius:var(--radius);
+  padding:18px; position:relative; overflow:hidden;
+}
+.card-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:1.1px; color:var(--ink-2); font-family:var(--font-mono); margin-bottom:8px; }
+.card-value{ font-family:var(--font-mono); font-size:26px; font-weight:600; letter-spacing:-.5px; }
+.card-sub{ font-size:12px; color:var(--ink-2); margin-top:6px; }
+.tag{ display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; padding:2px 8px; border-radius:20px; font-family:var(--font-mono); }
+.tag.up{ background:rgba(45,212,191,.12); color:var(--teal); }
+.tag.down{ background:rgba(239,100,97,.12); color:var(--coral); }
+.tag.warn{ background:rgba(245,166,35,.12); color:var(--amber); }
+
+h2.section-h{ font-family:var(--font-display); font-size:18px; margin:34px 0 14px; display:flex; align-items:center; gap:10px; }
+h2.section-h .idx{ font-family:var(--font-mono); font-size:11px; color:var(--ink-2); border:1px solid var(--line); border-radius:6px; padding:2px 7px; }
+h2.section-h small{ font-family:var(--font-body); font-weight:400; color:var(--ink-2); font-size:12.5px; margin-left:4px; }
+
+/* ---------- health score hero ---------- */
+.hero{
+  background:radial-gradient(circle at 15% 20%, rgba(45,212,191,.10), transparent 45%), var(--navy-900);
+  border:1px solid var(--line); border-radius:20px; padding:28px; display:grid; grid-template-columns:210px 1fr; gap:28px; align-items:center;
+}
+@media(max-width:720px){ .hero{grid-template-columns:1fr; text-align:center;} }
+.gauge-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.gauge-label{ font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:1.3px; color:var(--ink-2); }
+.gauge-score{ font-family:var(--font-display); font-size:34px; font-weight:700; margin-top:-108px; }
+.gauge-score span{ font-size:14px; color:var(--ink-2); font-family:var(--font-body); font-weight:400; }
+.hero-copy h2{ font-family:var(--font-display); font-size:21px; margin-bottom:8px; }
+.hero-copy p{ color:var(--ink-1); font-size:13.5px; line-height:1.6; margin-bottom:14px; }
+.hero-badges{ display:flex; gap:8px; flex-wrap:wrap; }
+@media(max-width:720px){ .hero-badges{justify-content:center;} }
+
+/* ---------- forms ---------- */
+.form-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+input, select{
+  background:var(--navy-800); border:1px solid var(--line); color:var(--ink-0); border-radius:8px;
+  padding:9px 11px; font-family:var(--font-body); font-size:13px; flex:1; min-width:120px;
+}
+input:focus, select:focus, button:focus, .nav-item:focus{ outline:2px solid var(--teal); outline-offset:1px; }
+label{ font-size:11.5px; color:var(--ink-2); display:block; margin-bottom:4px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.6px; }
+.field{ display:flex; flex-direction:column; flex:1; min-width:130px; }
+
+table{ width:100%; border-collapse:collapse; font-size:13px; }
+th{ text-align:left; color:var(--ink-2); font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:.8px; padding:8px 10px; border-bottom:1px solid var(--line); }
+td{ padding:10px; border-bottom:1px solid var(--line); }
+tr:last-child td{ border-bottom:none; }
+.row-actions{ display:flex; gap:6px; }
+.icon-btn{ background:none; border:1px solid var(--line); color:var(--ink-2); border-radius:6px; width:26px; height:26px; cursor:pointer; font-size:12px; }
+.icon-btn:hover{ color:var(--coral); border-color:var(--coral); }
+
+.progress-track{ width:100%; height:8px; border-radius:20px; background:var(--navy-700); overflow:hidden; margin-top:8px; }
+.progress-fill{ height:100%; background:linear-gradient(90deg, var(--teal-dim), var(--teal)); border-radius:20px; transition:width .6s ease; }
+
+.empty{ text-align:center; padding:30px 10px; color:var(--ink-2); font-size:13px; }
+
+.insight{
+  display:flex; gap:12px; padding:14px; border-radius:11px; background:var(--navy-800); border:1px solid var(--line); margin-bottom:10px;
+}
+.insight .dot{ width:8px; height:8px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+.insight.good .dot{ background:var(--teal); }
+.insight.warn .dot{ background:var(--amber); }
+.insight.bad .dot{ background:var(--coral); }
+.insight p{ font-size:13px; color:var(--ink-1); line-height:1.5; }
+.insight b{ color:var(--ink-0); }
+
+.checklist{ list-style:none; }
+.checklist li{ display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--line); font-size:13.5px; }
+.checklist li:last-child{ border-bottom:none; }
+.checklist input[type=checkbox]{ flex:none; width:16px; height:16px; margin-top:2px; accent-color:var(--teal); }
+.checklist li.done label{ text-decoration:line-through; color:var(--ink-2); }
+
+.tip-card{ background:var(--navy-800); border:1px solid var(--line); border-radius:11px; padding:14px; font-size:13px; color:var(--ink-1); line-height:1.55; }
+.tip-card b{ display:block; color:var(--teal); font-family:var(--font-mono); font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+
+.prompt-card{ background:var(--navy-800); border:1px dashed var(--line); border-radius:11px; padding:12px 14px; font-size:12.8px; color:var(--ink-1); font-family:var(--font-mono); position:relative; }
+.prompt-card button{ position:absolute; top:10px; right:10px; background:var(--navy-700); border:1px solid var(--line); color:var(--ink-2); font-size:10.5px; border-radius:6px; padding:4px 8px; cursor:pointer; font-family:var(--font-body); }
+.prompt-card button:hover{ color:var(--teal); }
+
+.link-list{ list-style:none; }
+.link-list li{ padding:10px 0; border-bottom:1px solid var(--line); font-size:13px; color:var(--ink-1); }
+.link-list li:last-child{ border-bottom:none; }
+.link-list b{ color:var(--ink-0); display:block; margin-bottom:2px; }
+
+.sim-result{ margin-top:14px; padding:16px; border-radius:11px; background:var(--navy-800); border:1px solid var(--teal-dim); }
+.sim-result .big{ font-family:var(--font-mono); font-size:24px; font-weight:700; color:var(--teal); }
+
+footer.print-foot{ display:none; }
+@media print{
+  .sidebar, .topbar-actions, .theme-toggle{ display:none !important; }
+  .shell{ grid-template-columns:1fr; }
+  body{ background:#fff; color:#111; }
+  .card, .hero, .insight, .tip-card{ border:1px solid #ccc !important; background:#fff !important; }
+  section.view{ display:block !important; }
+}
+::-webkit-scrollbar{ width:8px; height:8px; }
+::-webkit-scrollbar-thumb{ background:var(--navy-600); border-radius:10px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar" aria-label="Primary">
+    <div class="brand">
+      <div class="brand-mark">₹</div>
+      <div class="brand-text"><b>Command Deck</b><span>Financial OS</span></div>
+    </div>
+
+    <div class="nav-group" id="navGroup">
+      <div class="nav-label">Dashboard</div>
+      <div class="nav-item active" data-view="overview"><span class="nav-dot"></span>Overview</div>
+      <div class="nav-label">Money In / Out</div>
+      <div class="nav-item" data-view="income"><span class="nav-dot"></span>Freelance Income</div>
+      <div class="nav-item" data-view="expenses"><span class="nav-dot"></span>Expenses</div>
+      <div class="nav-item" data-view="budget"><span class="nav-dot"></span>Budget Planner</div>
+      <div class="nav-label">Obligations</div>
+      <div class="nav-item" data-view="loan"><span class="nav-dot"></span>Education Loan EMI</div>
+      <div class="nav-item" data-view="subscriptions"><span class="nav-dot"></span>Subscriptions</div>
+      <div class="nav-label">Building Wealth</div>
+      <div class="nav-item" data-view="emergency"><span class="nav-dot"></span>Emergency Fund</div>
+      <div class="nav-item" data-view="goals"><span class="nav-dot"></span>Goals</div>
+      <div class="nav-label">Intelligence</div>
+      <div class="nav-item" data-view="insights"><span class="nav-dot"></span>AI Insights</div>
+      <div class="nav-item" data-view="simulator"><span class="nav-dot"></span>What-If Simulator</div>
+      <div class="nav-item" data-view="calculators"><span class="nav-dot"></span>Calculators</div>
+      <div class="nav-item" data-view="reports"><span class="nav-dot"></span>Reports</div>
+      <div class="nav-label">Learn</div>
+      <div class="nav-item" data-view="learn"><span class="nav-dot"></span>Tips &amp; Literacy</div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="theme-toggle" id="themeToggle">
+        <span>Dark mode</span><div class="switch"></div>
+      </div>
+      <div style="font-size:10.5px; color:var(--ink-2); font-family:var(--font-mono); text-align:center;">Data stored locally · never leaves this device</div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <h1 id="pageTitle">Overview</h1>
+        <p id="pageSub">Your finances, freelance income and education loan — all in one instrument panel.</p>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn" id="printBtn">🖨 Print report</button>
+        <button class="btn btn-primary" id="quickAddBtn">+ Quick add</button>
+      </div>
+    </div>
+
+    <!-- ============ OVERVIEW ============ -->
+    <section class="view active" id="view-overview">
+      <div class="hero">
+        <div class="gauge-wrap">
+          <svg id="healthGauge" width="200" height="140" viewBox="0 0 200 120"></svg>
+          <div class="gauge-score" id="healthScoreText">-- <span>/100</span></div>
+          <div class="gauge-label" id="healthLabel">Calculating…</div>
+        </div>
+        <div class="hero-copy">
+          <h2>Financial Health Score</h2>
+          <p id="heroText">This score blends your savings rate, emergency fund coverage, EMI burden and spending consistency into one number — built for a freelance grad managing an education loan.</p>
+          <div class="hero-badges">
+            <span class="tag up" id="badgeSavings">Savings rate —</span>
+            <span class="tag warn" id="badgeEmi">EMI burden —</span>
+            <span class="tag down" id="badgeFund">Emergency fund —</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-h"><span class="idx">01</span>This Month at a Glance</h2>
+      <div class="grid grid-4" id="overviewCards"></div>
+
+      <h2 class="section-h"><span class="idx">02</span>Cash Flow — Last 6 Months</h2>
+      <div class="card">
+        <canvas id="cashflowChart" height="220" style="width:100%; max-width:100%;"></canvas>
+      </div>
+
+      <h2 class="section-h"><span class="idx">03</span>Where Your Money Goes</h2>
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-title">Expense split</div>
+          <canvas id="expenseDonut" height="220"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title">Emergency fund progress</div>
+          <div id="miniFundProgress"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INCOME ============ -->
+    <section class="view" id="view-income">
+      <div class="card">
+        <div class="card-title">Log a freelance / part-time payment</div>
+        <div class="form-row">
+          <div class="field"><label>Client / source</label><input id="incClient" placeholder="e.g. Acme Studio"></div>
+          <div class="field"><label>Amount (₹)</label><input id="incAmount" type="number" placeholder="15000"></div>
+          <div class="field"><label>Date</label><input id="incDate" type="date"></div>
+          <div class="field"><label>Type</label>
+            <select id="incType"><option>Project</option><option>Retainer</option><option>Gig</option><option>Stipend</option><option>Other</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="addIncomeBtn">Add income</button>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Income log</h2>
+      <div class="card">
+        <table id="incomeTable"><thead><tr><th>Date</th><th>Source</th><th>Type</th><th>Amount</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Income stability</h2>
+      <div class="card">
+        <div class="card-title">Monthly freelance income (last 6 months)</div>
+        <canvas id="incomeChart" height="200"></canvas>
+        <p class="card-sub" id="incomeStabilityNote"></p>
+      </div>
+    </section>
+
+    <!-- ============ EXPENSES ============ -->
+    <section class="view" id="view-expenses">
+      <div class="card">
+        <div class="card-title">Log an expense</div>
+        <div class="form-row">
+          <div class="field"><label>Description</label><input id="expDesc" placeholder="e.g. Groceries"></div>
+          <div class="field"><label>Amount (₹)</label><input id="expAmount" type="number" placeholder="1200"></div>
+          <div class="field"><label>Category</label>
+            <select id="expCategory"><option>Rent/PG</option><option>Food</option><option>Transport</option><option>Utilities</option><option>Subscriptions</option><option>Learning/Certs</option><option>Health</option><option>Entertainment</option><option>Loan EMI</option><option>Other</option></select>
+          </div>
+          <div class="field"><label>Date</label><input id="expDate" type="date"></div>
+        </div>
+        <button class="btn btn-primary" id="addExpenseBtn">Add expense</button>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Expense log</h2>
+      <div class="card">
+        <table id="expenseTable"><thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- ============ BUDGET ============ -->
+    <section class="view" id="view-budget">
+      <div class="card">
+        <div class="card-title">Set monthly budgets by category</div>
+        <div id="budgetForm" class="grid grid-3"></div>
+      </div>
+      <h2 class="section-h"><span class="idx">·</span>Budget vs actual (this month)</h2>
+      <div class="card" id="budgetVsActual"></div>
+    </section>
+
+    <!-- ============ LOAN ============ -->
+    <section class="view" id="view-loan">
+      <div class="card">
+        <div class="card-title">Education loan details</div>
+        <div class="form-row">
+          <div class="field"><label>Outstanding principal (₹)</label><input id="loanPrincipal" type="number" placeholder="400000"></div>
+          <div class="field"><label>Annual interest rate (%)</label><input id="loanRate" type="number" step="0.1" placeholder="9.5"></div>
+          <div class="field"><label>Tenure remaining (months)</label><input id="loanTenure" type="number" placeholder="48"></div>
+          <div class="field"><label>Monthly EMI (₹)</label><input id="loanEmi" type="number" placeholder="9800"></div>
+        </div>
+        <button class="btn btn-primary" id="saveLoanBtn">Save loan details</button>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Payoff snapshot</h2>
+      <div class="grid grid-3" id="loanCards"></div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Balance over remaining tenure</div>
+        <canvas id="loanChart" height="200"></canvas>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Extra payment impact</div>
+        <div class="form-row">
+          <div class="field"><label>Extra monthly payment (₹)</label><input id="extraPay" type="number" placeholder="1000"></div>
+          <button class="btn" id="calcExtraBtn" style="align-self:flex-end; height:38px;">Calculate savings</button>
+        </div>
+        <div id="extraPayResult"></div>
+      </div>
+    </section>
+
+    <!-- ============ SUBSCRIPTIONS ============ -->
+    <section class="view" id="view-subscriptions">
+      <div class="card">
+        <div class="card-title">Add a subscription</div>
+        <div class="form-row">
+          <div class="field"><label>Name</label><input id="subName" placeholder="e.g. Netflix"></div>
+          <div class="field"><label>Amount (₹/mo)</label><input id="subAmount" type="number" placeholder="199"></div>
+          <div class="field"><label>Billing cycle</label><select id="subCycle"><option>Monthly</option><option>Yearly</option></select></div>
+        </div>
+        <button class="btn btn-primary" id="addSubBtn">Add subscription</button>
+      </div>
+      <h2 class="section-h"><span class="idx">·</span>Active subscriptions</h2>
+      <div class="card">
+        <table id="subTable"><thead><tr><th>Name</th><th>Cycle</th><th>Monthly cost</th><th></th></tr></thead><tbody></tbody></table>
+        <p class="card-sub" id="subTotalNote"></p>
+      </div>
+    </section>
+
+    <!-- ============ EMERGENCY FUND ============ -->
+    <section class="view" id="view-emergency">
+      <div class="card">
+        <div class="card-title">Emergency fund target</div>
+        <div class="form-row">
+          <div class="field"><label>Target months of expenses</label><input id="fundMonths" type="number" value="6"></div>
+          <div class="field"><label>Current fund balance (₹)</label><input id="fundBalance" type="number" placeholder="20000"></div>
+        </div>
+        <button class="btn btn-primary" id="saveFundBtn">Save</button>
+      </div>
+      <h2 class="section-h"><span class="idx">·</span>Progress toward target</h2>
+      <div class="card" id="fundProgressCard"></div>
+
+      <h2 class="section-h"><span class="idx">·</span>Add to fund</h2>
+      <div class="card">
+        <div class="form-row">
+          <div class="field"><label>Amount to add (₹)</label><input id="fundAdd" type="number" placeholder="2000"></div>
+          <button class="btn" id="addFundBtn" style="align-self:flex-end; height:38px;">Add contribution</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ GOALS ============ -->
+    <section class="view" id="view-goals">
+      <div class="card">
+        <div class="card-title">Add a savings goal</div>
+        <div class="form-row">
+          <div class="field"><label>Goal name</label><input id="goalName" placeholder="e.g. New laptop"></div>
+          <div class="field"><label>Target amount (₹)</label><input id="goalTarget" type="number" placeholder="60000"></div>
+          <div class="field"><label>Saved so far (₹)</label><input id="goalSaved" type="number" placeholder="10000"></div>
+          <div class="field"><label>Target date</label><input id="goalDate" type="date"></div>
+        </div>
+        <button class="btn btn-primary" id="addGoalBtn">Add goal</button>
+      </div>
+      <h2 class="section-h"><span class="idx">·</span>Your goals</h2>
+      <div class="grid grid-2" id="goalsList"></div>
+    </section>
+
+    <!-- ============ INSIGHTS ============ -->
+    <section class="view" id="view-insights">
+      <h2 class="section-h"><span class="idx">·</span>AI-generated recommendations</h2>
+      <div id="insightsList"></div>
+    </section>
+
+    <!-- ============ SIMULATOR ============ -->
+    <section class="view" id="view-simulator">
+      <div class="card">
+        <div class="card-title">What-if: change income, expenses or savings rate</div>
+        <div class="form-row">
+          <div class="field"><label>Income change (%)</label><input id="simIncome" type="number" value="0"></div>
+          <div class="field"><label>Expense change (%)</label><input id="simExpense" type="number" value="0"></div>
+          <div class="field"><label>Extra monthly saving (₹)</label><input id="simExtraSave" type="number" value="0"></div>
+          <div class="field"><label>Project forward (months)</label><input id="simMonths" type="number" value="12"></div>
+        </div>
+        <button class="btn btn-primary" id="runSimBtn">Run simulation</button>
+        <div class="sim-result" id="simResult" style="display:none;"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Projected emergency fund trajectory</div>
+        <canvas id="simChart" height="220"></canvas>
+      </div>
+    </section>
+
+    <!-- ============ CALCULATORS ============ -->
+    <section class="view" id="view-calculators">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-title">EMI calculator</div>
+          <div class="field"><label>Loan amount (₹)</label><input id="calcAmt" type="number" placeholder="300000"></div>
+          <div class="field"><label>Rate (annual %)</label><input id="calcRate" type="number" step="0.1" placeholder="9.5"></div>
+          <div class="field"><label>Tenure (months)</label><input id="calcTenure" type="number" placeholder="36"></div>
+          <button class="btn btn-primary" id="calcEmiBtn" style="margin-top:8px;">Calculate EMI</button>
+          <div id="emiResult" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Emergency fund target calculator</div>
+          <div class="field"><label>Average monthly expenses (₹)</label><input id="calcExpenses" type="number" placeholder="18000"></div>
+          <div class="field"><label>Months of cover desired</label><input id="calcCover" type="number" value="6"></div>
+          <button class="btn btn-primary" id="calcFundBtn" style="margin-top:8px;">Calculate target</button>
+          <div id="fundTargetResult" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">SIP / compound savings growth</div>
+          <div class="field"><label>Monthly investment (₹)</label><input id="calcSip" type="number" placeholder="2000"></div>
+          <div class="field"><label>Expected annual return (%)</label><input id="calcSipRate" type="number" value="10"></div>
+          <div class="field"><label>Duration (years)</label><input id="calcSipYears" type="number" value="5"></div>
+          <button class="btn btn-primary" id="calcSipBtn" style="margin-top:8px;">Project growth</button>
+          <div id="sipResult" style="margin-top:12px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Freelance tax set-aside estimator</div>
+          <div class="field"><label>Monthly freelance income (₹)</label><input id="calcTaxIncome" type="number" placeholder="30000"></div>
+          <div class="field"><label>Set-aside rate (%)</label><input id="calcTaxRate" type="number" value="15"></div>
+          <button class="btn btn-primary" id="calcTaxBtn" style="margin-top:8px;">Estimate set-aside</button>
+          <div id="taxResult" style="margin-top:12px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ REPORTS ============ -->
+    <section class="view" id="view-reports">
+      <div class="card">
+        <div class="card-title">Monthly summary report</div>
+        <div id="reportBody"></div>
+      </div>
+      <p class="card-sub" style="margin-top:10px;">Use "Print report" in the top bar to export this as a PDF via your browser's print dialog.</p>
+    </section>
+
+    <!-- ============ LEARN ============ -->
+    <section class="view" id="view-learn">
+      <h2 class="section-h"><span class="idx">·</span>Tips for freelancers with education loans</h2>
+      <div class="grid grid-2" id="tipsGrid"></div>
+
+      <h2 class="section-h"><span class="idx">·</span>Planning checklist</h2>
+      <div class="card">
+        <ul class="checklist" id="checklistItems"></ul>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Useful resources</h2>
+      <div class="card">
+        <ul class="link-list" id="resourceList"></ul>
+      </div>
+
+      <h2 class="section-h"><span class="idx">·</span>Prompts to ask an AI assistant</h2>
+      <div class="grid grid-2" id="promptGrid"></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   STORAGE
+============================================================ */
+const DB_KEY = "pfc_command_center_v1";
+const defaultData = {
+  theme: "dark",
+  income: [],
+  expenses: [],
+  budgets: { "Rent/PG":6000,"Food":5000,"Transport":1500,"Utilities":1200,"Subscriptions":500,"Learning/Certs":1000,"Health":800,"Entertainment":1000,"Loan EMI":9800,"Other":1000 },
+  loan: { principal:400000, rate:9.5, tenure:48, emi:9800 },
+  subscriptions: [],
+  fund: { targetMonths:6, balance:20000 },
+  goals: [],
+  checklist: {}
+};
+
+function load(){
+  try{
+    const raw = localStorage.getItem(DB_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(defaultData));
+    const parsed = JSON.parse(raw);
+    return Object.assign(JSON.parse(JSON.stringify(defaultData)), parsed);
+  }catch(e){ return JSON.parse(JSON.stringify(defaultData)); }
+}
+function save(){ localStorage.setItem(DB_KEY, JSON.stringify(state)); }
+
+let state = load();
+
+/* seed a little sample data on very first run so charts aren't empty */
+(function seed(){
+  if(state.income.length===0 && state.expenses.length===0 && !localStorage.getItem(DB_KEY)){
+    const today = new Date();
+    for(let i=5;i>=0;i--){
+      const d = new Date(today.getFullYear(), today.getMonth()-i, 5);
+      state.income.push({id:cryptoId(), client:"Sample client", type:"Project", amount: 18000 + Math.round(Math.random()*8000), date: d.toISOString().slice(0,10)});
+      state.expenses.push({id:cryptoId(), desc:"Rent", category:"Rent/PG", amount:6000, date:d.toISOString().slice(0,10)});
+      state.expenses.push({id:cryptoId(), desc:"Food & groceries", category:"Food", amount:4500+Math.round(Math.random()*1000), date:d.toISOString().slice(0,10)});
+      state.expenses.push({id:cryptoId(), desc:"Loan EMI", category:"Loan EMI", amount:9800, date:d.toISOString().slice(0,10)});
+    }
+    save();
+  }
+})();
+
+function cryptoId(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function fmt(n){ n = Math.round(n||0); return "₹" + n.toLocaleString("en-IN"); }
+function monthKey(d){ const dt=new Date(d); return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0"); }
+function monthLabel(d){ const dt=new Date(d); return dt.toLocaleString("en-IN",{month:"short"}); }
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+const views = document.querySelectorAll(".view");
+const navItems = document.querySelectorAll(".nav-item");
+const titles = {
+  overview:["Overview","Your finances, freelance income and education loan — all in one instrument panel."],
+  income:["Freelance Income","Track every client payment, gig and retainer."],
+  expenses:["Expenses","Every rupee out, categorized."],
+  budget:["Budget Planner","Set monthly limits per category and track against them."],
+  loan:["Education Loan EMI","Payoff timeline, interest cost, and prepayment impact."],
+  subscriptions:["Subscriptions","The quiet recurring drains on your income."],
+  emergency:["Emergency Fund","Your top priority: a buffer for the freelance income dips."],
+  goals:["Goals","Save with purpose."],
+  insights:["AI Insights","Recommendations generated from your actual numbers."],
+  simulator:["What-If Simulator","Model income shifts, expense cuts and extra savings."],
+  calculators:["Calculators","EMI, emergency fund, SIP growth, and tax set-aside."],
+  reports:["Reports","A printable monthly summary."],
+  learn:["Tips & Literacy","Guidance built for freelance grads carrying an education loan."]
+};
+function switchView(v){
+  views.forEach(s=>s.classList.toggle("active", s.id==="view-"+v));
+  navItems.forEach(n=>n.classList.toggle("active", n.dataset.view===v));
+  document.getElementById("pageTitle").textContent = titles[v][0];
+  document.getElementById("pageSub").textContent = titles[v][1];
+  renderAll();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+navItems.forEach(n=> n.addEventListener("click", ()=> switchView(n.dataset.view)));
+
+document.getElementById("quickAddBtn").addEventListener("click", ()=> switchView("expenses"));
+document.getElementById("printBtn").addEventListener("click", ()=>{ switchView("reports"); setTimeout(()=>window.print(), 200); });
+
+/* ============================================================
+   THEME
+============================================================ */
+const themeToggle = document.getElementById("themeToggle");
+function applyTheme(){ document.documentElement.setAttribute("data-theme", state.theme); document.body.setAttribute("data-theme", state.theme); }
+applyTheme();
+themeToggle.addEventListener("click", ()=>{
+  state.theme = state.theme==="dark" ? "light" : "dark";
+  applyTheme(); save(); renderAll();
+});
+
+/* ============================================================
+   CANVAS CHART HELPERS (no libraries)
+============================================================ */
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim() || getComputedStyle(document.body).getPropertyValue(v).trim(); }
+
+function setupCanvas(canvas){
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || canvas.parentElement.clientWidth || 400;
+  const h = canvas.height || 200;
+  canvas.width = w*ratio; canvas.height = h*ratio;
+  canvas.style.width = w+"px"; canvas.style.height = h+"px";
+  const ctx = canvas.getContext("2d");
+  ctx.scale(ratio,ratio);
+  return {ctx, w, h};
+}
+
+function drawLineChart(canvasId, series, opts){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const pad = {l:44,r:16,t:16,b:28};
+  const maxVal = Math.max(1, ...series.flatMap(s=>s.data)) * 1.15;
+  const n = series[0].data.length;
+  const plotW = w-pad.l-pad.r, plotH = h-pad.t-pad.b;
+  ctx.strokeStyle = css('--line'); ctx.lineWidth=1;
+  ctx.fillStyle = css('--ink-2'); ctx.font="11px "+getComputedStyle(document.body).fontFamily;
+  for(let i=0;i<=4;i++){
+    const y = pad.t + plotH - (plotH*i/4);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.strokeStyle=css('--line'); ctx.globalAlpha=0.5; ctx.stroke(); ctx.globalAlpha=1;
+    ctx.fillText(fmt(maxVal*i/4).replace("₹",""), 2, y+3);
+  }
+  const labels = opts.labels || [];
+  labels.forEach((lab,i)=>{
+    const x = pad.l + (plotW*(i/(n-1||1)));
+    ctx.fillText(lab, x-10, h-8);
+  });
+  series.forEach(s=>{
+    ctx.beginPath();
+    s.data.forEach((v,i)=>{
+      const x = pad.l + (plotW*(i/(n-1||1)));
+      const y = pad.t + plotH - (v/maxVal*plotH);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = s.color; ctx.lineWidth=2.4; ctx.lineJoin="round"; ctx.stroke();
+    // area fill
+    const lastX = pad.l + plotW;
+    ctx.lineTo(lastX, pad.t+plotH); ctx.lineTo(pad.l, pad.t+plotH); ctx.closePath();
+    ctx.fillStyle = s.color+"22"; ctx.fill();
+    // dots
+    s.data.forEach((v,i)=>{
+      const x = pad.l + (plotW*(i/(n-1||1)));
+      const y = pad.t + plotH - (v/maxVal*plotH);
+      ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fillStyle=s.color; ctx.fill();
+    });
+  });
+}
+
+function drawBarChart(canvasId, series, labels){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const pad = {l:44,r:16,t:16,b:28};
+  const groups = series[0].data.length;
+  const maxVal = Math.max(1, ...series.flatMap(s=>s.data)) * 1.2;
+  const plotW = w-pad.l-pad.r, plotH = h-pad.t-pad.b;
+  ctx.fillStyle = css('--ink-2'); ctx.font="11px sans-serif";
+  for(let i=0;i<=4;i++){
+    const y = pad.t + plotH - (plotH*i/4);
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(w-pad.r,y); ctx.strokeStyle=css('--line'); ctx.globalAlpha=.5; ctx.stroke(); ctx.globalAlpha=1;
+    ctx.fillText(fmt(maxVal*i/4).replace("₹",""), 2, y+3);
+  }
+  const groupW = plotW/groups;
+  const barW = Math.min(22, groupW/(series.length+1.5));
+  series.forEach((s,si)=>{
+    s.data.forEach((v,i)=>{
+      const gx = pad.l + groupW*i + groupW/2;
+      const x = gx - (series.length*barW)/2 + si*barW;
+      const bh = (v/maxVal)*plotH;
+      const y = pad.t+plotH-bh;
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x,y,barW-3,bh,3) : ctx.rect(x,y,barW-3,bh);
+      ctx.fill();
+    });
+  });
+  labels.forEach((lab,i)=>{
+    const gx = pad.l + groupW*i + groupW/2;
+    ctx.fillStyle = css('--ink-2');
+    ctx.fillText(lab, gx-10, h-8);
+  });
+}
+
+function drawDonut(canvasId, dataObj){
+  const canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  const {ctx,w,h} = setupCanvas(canvas);
+  ctx.clearRect(0,0,w,h);
+  const entries = Object.entries(dataObj).filter(([k,v])=>v>0);
+  const total = entries.reduce((a,[,v])=>a+v,0);
+  const cx = 90, cy = h/2, r = 62, rInner=38;
+  const colors = ["#2dd4bf","#f5a623","#ef6461","#7c9cff","#c792ea","#59d0ff","#ffb86b","#8b93a8","#ff8fa3","#6ee7b7"];
+  let start = -Math.PI/2;
+  if(total===0){
+    ctx.fillStyle=css('--ink-2'); ctx.font="12px sans-serif"; ctx.fillText("No expense data yet", cx-40, cy);
+    return;
+  }
+  entries.forEach(([k,v],i)=>{
+    const angle = (v/total)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,start+angle);
+    ctx.closePath();
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.fill();
+    start += angle;
+  });
+  ctx.globalCompositeOperation="destination-out";
+  ctx.beginPath(); ctx.arc(cx,cy,rInner,0,Math.PI*2); ctx.fill();
+  ctx.globalCompositeOperation="source-over";
+  // legend
+  let ly = 14;
+  entries.sort((a,b)=>b[1]-a[1]).forEach(([k,v],i)=>{
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.fillRect(190, ly, 9, 9);
+    ctx.fillStyle = css('--ink-1'); ctx.font="11.5px sans-serif";
+    ctx.fillText(k+"  "+Math.round(v/total*100)+"%", 204, ly+8);
+    ly += 18;
+  });
+  ctx.fillStyle = css('--ink-0'); ctx.font="bold 13px sans-serif";
+  ctx.fillText(fmt(total), cx-22, cy+5);
+}
+
+/* ============================================================
+   DERIVED DATA
+============================================================ */
+function last6Months(){
+  const arr=[]; const today=new Date();
+  for(let i=5;i>=0;i--){ arr.push(new Date(today.getFullYear(), today.getMonth()-i, 1)); }
+  return arr;
+}
+function sumByMonth(list, months, valKey){
+  return months.map(m=>{
+    const mk = monthKey(m);
+    return list.filter(x=>monthKey(x.date)===mk).reduce((a,b)=>a+Number(b[valKey]||0),0);
+  });
+}
+function currentMonthKey(){ return monthKey(new Date()); }
+function thisMonthIncome(){ return state.income.filter(i=>monthKey(i.date)===currentMonthKey()).reduce((a,b)=>a+Number(b.amount),0); }
+function thisMonthExpenses(){ return state.expenses.filter(e=>monthKey(e.date)===currentMonthKey()).reduce((a,b)=>a+Number(b.amount),0); }
+function avgMonthlyExpenses(){
+  const months = last6Months();
+  const totals = sumByMonth(state.expenses, months, "amount");
+  const nonzero = totals.filter(t=>t>0);
+  return nonzero.length ? nonzero.reduce((a,b)=>a+b,0)/nonzero.length : (totals.reduce((a,b)=>a+b,0)/months.length || 1);
+}
+function expensesByCategory(){
+  const obj={};
+  state.expenses.filter(e=>monthKey(e.date)===currentMonthKey()).forEach(e=>{ obj[e.category]=(obj[e.category]||0)+Number(e.amount); });
+  return obj;
+}
+function subMonthlyTotal(){
+  return state.subscriptions.reduce((a,s)=> a + (s.cycle==="Yearly" ? Number(s.amount)/12 : Number(s.amount)), 0);
+}
+function healthScore(){
+  const income = thisMonthIncome() || avgIncome6();
+  const expenses = thisMonthExpenses() || avgMonthlyExpenses();
+  const savingsRate = income>0 ? Math.max(0,(income-expenses)/income) : 0;
+  const emiShare = income>0 ? (state.loan.emi/income) : 1;
+  const fundTarget = avgMonthlyExpenses() * (state.fund.targetMonths||6);
+  const fundCoverage = fundTarget>0 ? Math.min(1, state.fund.balance/fundTarget) : 0;
+  const incomeConsistency = incomeStability();
+
+  const savingsScore = Math.min(1, savingsRate/0.3); // 30% savings rate = full marks
+  const emiScore = Math.max(0, 1 - Math.min(1, emiShare/0.5)); // >50% of income to EMI = 0
+  const fundScore = fundCoverage;
+  const consistencyScore = incomeConsistency;
+
+  const score = Math.round((savingsScore*30) + (emiScore*25) + (fundScore*30) + (consistencyScore*15));
+  return {score: Math.max(0,Math.min(100,score)), savingsRate, emiShare, fundCoverage, incomeConsistency};
+}
+function avgIncome6(){
+  const months = last6Months();
+  const totals = sumByMonth(state.income, months, "amount");
+  const nz = totals.filter(t=>t>0);
+  return nz.length ? nz.reduce((a,b)=>a+b,0)/nz.length : 0;
+}
+function incomeStability(){
+  const months = last6Months();
+  const totals = sumByMonth(state.income, months, "amount").filter(t=>t>0);
+  if(totals.length<2) return 0.5;
+  const mean = totals.reduce((a,b)=>a+b,0)/totals.length;
+  const variance = totals.reduce((a,b)=>a+Math.pow(b-mean,2),0)/totals.length;
+  const cv = mean>0 ? Math.sqrt(variance)/mean : 1;
+  return Math.max(0, Math.min(1, 1-cv));
+}
+
+/* ============================================================
+   RENDER: GAUGE
+============================================================ */
+function renderGauge(){
+  const {score} = healthScore();
+  const svg = document.getElementById("healthGauge");
+  const cx=100, cy=110, r=86;
+  const pct = score/100;
+  const startAngle = Math.PI, endAngle = Math.PI + Math.PI*pct;
+  function polar(angle){ return [cx + r*Math.cos(angle), cy + r*Math.sin(angle)]; }
+  const [sx,sy] = polar(Math.PI);
+  const [ex,ey] = polar(Math.PI + Math.PI); // full
+  const [px,py] = polar(startAngle+ (Math.PI*pct));
+  const largeArc = pct>0.5 ? 1 : 0;
+  const color = score>=70?"#2dd4bf":score>=45?"#f5a623":"#ef6461";
+  svg.innerHTML = `
+    <path d="M ${sx} ${sy} A ${r} ${r} 0 1 1 ${ex} ${ey}" fill="none" stroke="${css('--navy-700')||'#232a47'}" stroke-width="14" stroke-linecap="round"/>
+    <path d="M ${sx} ${sy} A ${r} ${r} 0 ${largeArc} 1 ${px} ${py}" fill="none" stroke="${color}" stroke-width="14" stroke-linecap="round"/>
+  `;
+  document.getElementById("healthScoreText").innerHTML = score + " <span>/100</span>";
+  const label = score>=80?"Excellent shape":score>=65?"Solid footing":score>=45?"Needs attention":"At risk";
+  document.getElementById("healthLabel").textContent = label;
+
+  const h = healthScore();
+  const sEl = document.getElementById("badgeSavings");
+  sEl.textContent = "Savings rate " + Math.round(h.savingsRate*100)+"%";
+  sEl.className = "tag " + (h.savingsRate>0.15?"up":h.savingsRate>0?"warn":"down");
+  const eEl = document.getElementById("badgeEmi");
+  eEl.textContent = "EMI burden " + Math.round(h.emiShare*100)+"%";
+  eEl.className = "tag " + (h.emiShare<0.25?"up":h.emiShare<0.4?"warn":"down");
+  const fEl = document.getElementById("badgeFund");
+  fEl.textContent = "Emergency fund " + Math.round(h.fundCoverage*100)+"%";
+  fEl.className = "tag " + (h.fundCoverage>0.75?"up":h.fundCoverage>0.3?"warn":"down");
+}
+
+/* ============================================================
+   RENDER: OVERVIEW
+============================================================ */
+function renderOverview(){
+  renderGauge();
+  const inc = thisMonthIncome(), exp = thisMonthExpenses(), net = inc-exp;
+  const cards = [
+    {t:"Income this month", v:fmt(inc), s:"Freelance + gigs", tag:null},
+    {t:"Expenses this month", v:fmt(exp), s:"All categories incl. EMI", tag:null},
+    {t:"Net cash flow", v:fmt(net), s: net>=0 ? "You're in the green" : "Spending exceeds income", tag: net>=0?"up":"down"},
+    {t:"Emergency fund", v:fmt(state.fund.balance), s: Math.round((state.fund.balance/(avgMonthlyExpenses()*(state.fund.targetMonths||6)||1))*100)+"% of target", tag:null}
+  ];
+  document.getElementById("overviewCards").innerHTML = cards.map(c=>`
+    <div class="card">
+      <div class="card-title">${c.t}</div>
+      <div class="card-value">${c.v}</div>
+      <div class="card-sub">${c.s}${c.tag?` <span class="tag ${c.tag}">${c.tag==='up'?'▲':'▼'}</span>`:''}</div>
+    </div>`).join("");
+
+  const months = last6Months();
+  const labels = months.map(monthLabel);
+  const incTotals = sumByMonth(state.income, months, "amount");
+  const expTotals = sumByMonth(state.expenses, months, "amount");
+  drawLineChart("cashflowChart", [
+    {data:incTotals, color:"#2dd4bf"},
+    {data:expTotals, color:"#ef6461"}
+  ], {labels});
+
+  drawDonut("expenseDonut", expensesByCategory());
+
+  const fundTarget = avgMonthlyExpenses() * (state.fund.targetMonths||6);
+  const pct = fundTarget>0 ? Math.min(100, Math.round(state.fund.balance/fundTarget*100)) : 0;
+  document.getElementById("miniFundProgress").innerHTML = `
+    <div class="card-value" style="font-size:20px;">${fmt(state.fund.balance)} <span style="font-size:12px;color:var(--ink-2);">of ${fmt(fundTarget)}</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="card-sub">${pct}% toward a ${state.fund.targetMonths}-month buffer</div>
+  `;
+}
+
+/* ============================================================
+   RENDER: INCOME
+============================================================ */
+function renderIncome(){
+  const tbody = document.querySelector("#incomeTable tbody");
+  const rows = [...state.income].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  tbody.innerHTML = rows.length ? rows.map(r=>`
+    <tr>
+      <td>${r.date}</td><td>${escapeHtml(r.client)}</td><td>${r.type}</td><td style="font-family:var(--font-mono)">${fmt(r.amount)}</td>
+      <td><button class="icon-btn" data-del-income="${r.id}">✕</button></td>
+    </tr>`).join("") : `<tr><td colspan="5" class="empty">No income logged yet — add your first payment above.</td></tr>`;
+
+  const months = last6Months(); const labels = months.map(monthLabel);
+  const totals = sumByMonth(state.income, months, "amount");
+  drawBarChart("incomeChart", [{data:totals, color:"#2dd4bf"}], labels);
+  const stab = Math.round(incomeStability()*100);
+  document.getElementById("incomeStabilityNote").textContent =
+    `Income stability score: ${stab}%. ` + (stab>70 ? "Your freelance income is fairly steady month to month." : "Income varies a fair bit — worth building a bigger buffer for lean months.");
+}
+document.getElementById("addIncomeBtn").addEventListener("click", ()=>{
+  const client = document.getElementById("incClient").value.trim() || "Untitled client";
+  const amount = Number(document.getElementById("incAmount").value);
+  const date = document.getElementById("incDate").value || new Date().toISOString().slice(0,10);
+  const type = document.getElementById("incType").value;
+  if(!amount || amount<=0){ flash("Enter a valid amount"); return; }
+  state.income.push({id:cryptoId(), client, amount, date, type});
+  save();
+  document.getElementById("incClient").value=""; document.getElementById("incAmount").value="";
+  renderAll();
+});
+document.querySelector("#incomeTable").addEventListener("click", e=>{
+  const id = e.target.getAttribute("data-del-income");
+  if(id){ state.income = state.income.filter(x=>x.id!==id); save(); renderAll(); }
+});
+
+/* ============================================================
+   RENDER: EXPENSES
+============================================================ */
+function renderExpenses(){
+  const tbody = document.querySelector("#expenseTable tbody");
+  const rows = [...state.expenses].sort((a,b)=> new Date(b.date)-new Date(a.date));
+  tbody.innerHTML = rows.length ? rows.map(r=>`
+    <tr>
+      <td>${r.date}</td><td>${escapeHtml(r.desc)}</td><td>${r.category}</td><td style="font-family:var(--font-mono)">${fmt(r.amount)}</td>
+      <td><button class="icon-btn" data-del-expense="${r.id}">✕</button></td>
+    </tr>`).join("") : `<tr><td colspan="5" class="empty">No expenses logged yet.</td></tr>`;
+}
+document.getElementById("addExpenseBtn").addEventListener("click", ()=>{
+  const desc = document.getElementById("expDesc").value.trim() || "Expense";
+  const amount = Number(document.getElementById("expAmount").value);
+  const category = document.getElementById("expCategory").value;
+  const date = document.getElementById("expDate").value || new Date().toISOString().slice(0,10);
+  if(!amount || amount<=0){ flash("Enter a valid amount"); return; }
+  state.expenses.push({id:cryptoId(), desc, amount, category, date});
+  save();
+  document.getElementById("expDesc").value=""; document.getElementById("expAmount").value="";
+  renderAll();
+});
+document.querySelector("#expenseTable").addEventListener("click", e=>{
+  const id = e.target.getAttribute("data-del-expense");
+  if(id){ state.expenses = state.expenses.filter(x=>x.id!==id); save(); renderAll(); }
+});
+
+/* ============================================================
+   RENDER: BUDGET
+============================================================ */
+function renderBudget(){
+  const cats = Object.keys(state.budgets);
+  document.getElementById("budgetForm").innerHTML = cats.map(c=>`
+    <div class="field">
+      <label>${c}</label>
+      <input type="number" data-budget-cat="${c}" value="${state.budgets[c]}">
+    </div>`).join("") + `<button class="btn btn-primary" id="saveBudgetBtn" style="height:38px; align-self:flex-end;">Save budgets</button>`;
+
+  document.getElementById("saveBudgetBtn").addEventListener("click", ()=>{
+    document.querySelectorAll("[data-budget-cat]").forEach(inp=>{
+      state.budgets[inp.getAttribute("data-budget-cat")] = Number(inp.value)||0;
+    });
+    save(); renderAll(); flash("Budgets saved");
+  });
+
+  const actual = expensesByCategory();
+  document.getElementById("budgetVsActual").innerHTML = cats.map(c=>{
+    const b = state.budgets[c]||0; const a = actual[c]||0;
+    const pct = b>0 ? Math.min(150, Math.round(a/b*100)) : 0;
+    const over = a>b && b>0;
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;">
+        <span>${c}</span><span style="font-family:var(--font-mono); color:${over?'var(--coral)':'var(--ink-1)'}">${fmt(a)} / ${fmt(b)}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${Math.min(100,pct)}%; background:${over?'linear-gradient(90deg,#ef6461,#f5a623)':'linear-gradient(90deg,var(--teal-dim),var(--teal))'}"></div></div>
+    </div>`;
+  }).join("");
+}
+
+/* ============================================================
+   RENDER: LOAN
+============================================================ */
+function loanSchedule(principal, annualRate, tenure, emi){
+  const r = annualRate/12/100;
+  let bal = principal; const points=[bal]; let totalInterest=0; let months=0;
+  for(let i=0;i<tenure && bal>0.5;i++){
+    const interest = bal*r;
+    let principalPaid = emi - interest;
+    if(principalPaid<=0){ break; } // EMI too low to cover interest
+    if(principalPaid>bal) principalPaid=bal;
+    bal -= principalPaid;
+    totalInterest += interest;
+    points.push(Math.max(0,bal));
+    months++;
+    if(bal<=0.5) break;
+  }
+  return {points, totalInterest, months};
+}
+function renderLoan(){
+  document.getElementById("loanPrincipal").value = state.loan.principal;
+  document.getElementById("loanRate").value = state.loan.rate;
+  document.getElementById("loanTenure").value = state.loan.tenure;
+  document.getElementById("loanEmi").value = state.loan.emi;
+
+  const {principal, rate, tenure, emi} = state.loan;
+  const sched = loanSchedule(principal, rate, tenure, emi);
+  const totalPaid = emi*sched.months;
+  document.getElementById("loanCards").innerHTML = `
+    <div class="card"><div class="card-title">Payoff time</div><div class="card-value">${sched.months} mo</div><div class="card-sub">${(sched.months/12).toFixed(1)} years remaining</div></div>
+    <div class="card"><div class="card-title">Total interest remaining</div><div class="card-value">${fmt(sched.totalInterest)}</div><div class="card-sub">At ${rate}% p.a.</div></div>
+    <div class="card"><div class="card-title">Total to be paid</div><div class="card-value">${fmt(totalPaid)}</div><div class="card-sub">Principal + interest</div></div>
+  `;
+  const labels = sched.points.map((_,i)=> i%Math.ceil(sched.points.length/8||1)===0 ? "M"+i : "");
+  drawLineChart("loanChart", [{data:sched.points, color:"#f5a623"}], {labels});
+}
+document.getElementById("saveLoanBtn").addEventListener("click", ()=>{
+  state.loan = {
+    principal: Number(document.getElementById("loanPrincipal").value)||0,
+    rate: Number(document.getElementById("loanRate").value)||0,
+    tenure: Number(document.getElementById("loanTenure").value)||0,
+    emi: Number(document.getElementById("loanEmi").value)||0,
+  };
+  save(); renderAll(); flash("Loan details saved");
+});
+document.getElementById("calcExtraBtn").addEventListener("click", ()=>{
+  const extra = Number(document.getElementById("extraPay").value)||0;
+  const base = loanSchedule(state.loan.principal, state.loan.rate, state.loan.tenure, state.loan.emi);
+  const boosted = loanSchedule(state.loan.principal, state.loan.rate, state.loan.tenure, state.loan.emi+extra);
+  const monthsSaved = base.months - boosted.months;
+  const interestSaved = base.totalInterest - boosted.totalInterest;
+  document.getElementById("extraPayResult").innerHTML = `
+    <div class="sim-result">
+      <div class="big">${monthsSaved>0?monthsSaved:0} months earlier</div>
+      <p class="card-sub">Paying ${fmt(extra)} extra each month saves you ${fmt(interestSaved>0?interestSaved:0)} in interest and clears the loan ${monthsSaved>0?monthsSaved:0} months sooner.</p>
+    </div>`;
+});
+
+/* ============================================================
+   RENDER: SUBSCRIPTIONS
+============================================================ */
+function renderSubs(){
+  const tbody = document.querySelector("#subTable tbody");
+  tbody.innerHTML = state.subscriptions.length ? state.subscriptions.map(s=>`
+    <tr><td>${escapeHtml(s.name)}</td><td>${s.cycle}</td><td style="font-family:var(--font-mono)">${fmt(s.cycle==="Yearly"?s.amount/12:s.amount)}</td>
+    <td><button class="icon-btn" data-del-sub="${s.id}">✕</button></td></tr>`).join("")
+    : `<tr><td colspan="4" class="empty">No subscriptions tracked yet.</td></tr>`;
+  document.getElementById("subTotalNote").textContent = `Total recurring cost: ${fmt(subMonthlyTotal())}/month`;
+}
+document.getElementById("addSubBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("subName").value.trim();
+  const amount = Number(document.getElementById("subAmount").value);
+  const cycle = document.getElementById("subCycle").value;
+  if(!name || !amount){ flash("Enter subscription name and amount"); return; }
+  state.subscriptions.push({id:cryptoId(), name, amount, cycle});
+  save(); document.getElementById("subName").value=""; document.getElementById("subAmount").value="";
+  renderAll();
+});
+document.querySelector("#subTable").addEventListener("click", e=>{
+  const id = e.target.getAttribute("data-del-sub");
+  if(id){ state.subscriptions = state.subscriptions.filter(x=>x.id!==id); save(); renderAll(); }
+});
+
+/* ============================================================
+   RENDER: EMERGENCY FUND
+============================================================ */
+function renderFund(){
+  document.getElementById("fundMonths").value = state.fund.targetMonths;
+  document.getElementById("fundBalance").value = state.fund.balance;
+  const target = avgMonthlyExpenses()*(state.fund.targetMonths||6);
+  const pct = target>0 ? Math.min(100, Math.round(state.fund.balance/target*100)) : 0;
+  document.getElementById("fundProgressCard").innerHTML = `
+    <div class="card-value">${fmt(state.fund.balance)} <span style="font-size:13px;color:var(--ink-2);">of ${fmt(target)} target</span></div>
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="card-sub">${pct}% covered — based on average monthly expenses of ${fmt(avgMonthlyExpenses())} × ${state.fund.targetMonths} months</div>
+  `;
+}
+document.getElementById("saveFundBtn").addEventListener("click", ()=>{
+  state.fund.targetMonths = Number(document.getElementById("fundMonths").value)||6;
+  state.fund.balance = Number(document.getElementById("fundBalance").value)||0;
+  save(); renderAll(); flash("Emergency fund settings saved");
+});
+document.getElementById("addFundBtn").addEventListener("click", ()=>{
+  const add = Number(document.getElementById("fundAdd").value)||0;
+  if(add<=0){ flash("Enter an amount to add"); return; }
+  state.fund.balance += add;
+  save(); document.getElementById("fundAdd").value="";
+  renderAll(); flash(`Added ${fmt(add)} to your emergency fund`);
+});
+
+/* ============================================================
+   RENDER: GOALS
+============================================================ */
+function renderGoals(){
+  const wrap = document.getElementById("goalsList");
+  wrap.innerHTML = state.goals.length ? state.goals.map(g=>{
+    const pct = g.target>0 ? Math.min(100, Math.round(g.saved/g.target*100)) : 0;
+    return `<div class="card">
+      <div class="card-title">${escapeHtml(g.name)} ${g.date?`· due ${g.date}`:""}</div>
+      <div class="card-value" style="font-size:20px;">${fmt(g.saved)} <span style="font-size:12px;color:var(--ink-2);">/ ${fmt(g.target)}</span></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="card-sub">${pct}% funded</div>
+      <button class="icon-btn" style="margin-top:10px;" data-del-goal="${g.id}">✕ Remove</button>
+    </div>`;
+  }).join("") : `<div class="empty">No goals yet — add one above, like "New laptop" or "Certification course".</div>`;
+}
+document.getElementById("addGoalBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("goalName").value.trim();
+  const target = Number(document.getElementById("goalTarget").value);
+  const saved = Number(document.getElementById("goalSaved").value)||0;
+  const date = document.getElementById("goalDate").value;
+  if(!name || !target){ flash("Enter goal name and target amount"); return; }
+  state.goals.push({id:cryptoId(), name, target, saved, date});
+  save();
+  document.getElementById("goalName").value=""; document.getElementById("goalTarget").value=""; document.getElementById("goalSaved").value="";
+  renderAll();
+});
+document.getElementById("goalsList").addEventListener("click", e=>{
+  const id = e.target.getAttribute("data-del-goal");
+  if(id){ state.goals = state.goals.filter(x=>x.id!==id); save(); renderAll(); }
+});
+
+/* ============================================================
+   RENDER: INSIGHTS
+============================================================ */
+function renderInsights(){
+  const h = healthScore();
+  const inc = thisMonthIncome() || avgIncome6();
+  const exp = thisMonthExpenses() || avgMonthlyExpenses();
+  const insights = [];
+
+  if(h.fundCoverage < 0.5){
+    insights.push({type:"warn", text:`Your emergency fund covers only <b>${Math.round(h.fundCoverage*100)}%</b> of your ${state.fund.targetMonths}-month target. As a freelancer, this buffer matters more than usual — consider automating a fixed transfer to it right after each client payment lands.`});
+  } else if(h.fundCoverage < 1){
+    insights.push({type:"good", text:`You're <b>${Math.round(h.fundCoverage*100)}%</b> of the way to a full emergency buffer. Keep the momentum — you're closer than most freelancers your age.`});
+  } else {
+    insights.push({type:"good", text:`Your emergency fund fully covers your target of ${state.fund.targetMonths} months. Consider directing new surplus toward loan prepayment or a SIP.`});
+  }
+
+  if(h.emiShare > 0.4){
+    insights.push({type:"bad", text:`Your education loan EMI is <b>${Math.round(h.emiShare*100)}%</b> of income — above the commonly recommended 40% ceiling. If a low-income month hits, this could squeeze essentials. Check the Loan tab for prepayment options once the emergency fund is stronger.`});
+  } else if(h.emiShare > 0.25){
+    insights.push({type:"warn", text:`EMI takes up <b>${Math.round(h.emiShare*100)}%</b> of income — manageable, but keep an eye on it if freelance income dips.`});
+  }
+
+  if(h.incomeConsistency < 0.5){
+    insights.push({type:"warn", text:`Your freelance income has been fairly uneven over the last 6 months. Budgeting against your <i>lowest</i> recent month, not the average, will help avoid shortfalls.`});
+  }
+
+  if(h.savingsRate < 0.1 && inc>0){
+    insights.push({type:"bad", text:`You're saving only <b>${Math.round(h.savingsRate*100)}%</b> of income this month. Even ₹500–1000 automated right after a payment adds up over a freelance year.`});
+  } else if(h.savingsRate >= 0.2){
+    insights.push({type:"good", text:`Nice — you're saving <b>${Math.round(h.savingsRate*100)}%</b> of income this month, above the 20% guideline.`});
+  }
+
+  const subs = subMonthlyTotal();
+  if(subs > 0 && inc>0 && subs/inc > 0.05){
+    insights.push({type:"warn", text:`Subscriptions cost <b>${fmt(subs)}/month</b> — about ${Math.round(subs/inc*100)}% of income. Worth a quarterly audit of what's actually used.`});
+  }
+
+  if(state.goals.length===0){
+    insights.push({type:"warn", text:`You haven't set any savings goals yet. A concrete goal (like a certification course or a laptop upgrade) tends to improve follow-through versus saving "in general."`});
+  }
+
+  document.getElementById("insightsList").innerHTML = insights.map(i=>`
+    <div class="insight ${i.type}"><div class="dot"></div><p>${i.text}</p></div>
+  `).join("");
+}
+
+/* ============================================================
+   RENDER: SIMULATOR
+============================================================ */
+document.getElementById("runSimBtn").addEventListener("click", ()=>{
+  const incPct = Number(document.getElementById("simIncome").value)||0;
+  const expPct = Number(document.getElementById("simExpense").value)||0;
+  const extraSave = Number(document.getElementById("simExtraSave").value)||0;
+  const monthsN = Number(document.getElementById("simMonths").value)||12;
+
+  const baseIncome = avgIncome6() || thisMonthIncome() || 20000;
+  const baseExpense = avgMonthlyExpenses() || 15000;
+  const newIncome = baseIncome * (1+incPct/100);
+  const newExpense = baseExpense * (1+expPct/100);
+  const monthlyNet = newIncome - newExpense - extraSave;
+  const monthlySavings = (newIncome-newExpense >0 ? newIncome-newExpense-extraSave : -extraSave) + extraSave; // savings deposited = surplus + extra intentional
+  const surplus = newIncome-newExpense;
+  const totalSavedOverPeriod = (surplus>0? surplus:0)*monthsN + extraSave*monthsN;
+
+  let bal = state.fund.balance;
+  const traj = [bal];
+  for(let m=0;m<monthsN;m++){
+    bal += (surplus>0?surplus:0) + extraSave;
+    traj.push(Math.max(0,bal));
+  }
+  const target = avgMonthlyExpenses()*(state.fund.targetMonths||6);
+  const monthsToTarget = target>0 ? (()=>{ for(let i=0;i<traj.length;i++){ if(traj[i]>=target) return i; } return null; })() : null;
+
+  document.getElementById("simResult").style.display="block";
+  document.getElementById("simResult").innerHTML = `
+    <div class="big">${fmt(traj[traj.length-1])}</div>
+    <p class="card-sub">Projected emergency fund balance after ${monthsN} months, with income at ${fmt(newIncome)}/mo and expenses at ${fmt(newExpense)}/mo.
+    ${monthsToTarget!==null ? `You'd hit your ${state.fund.targetMonths}-month target in about <b style="color:var(--teal)">${monthsToTarget} months</b>.` : `At this rate, you won't reach your target within the projection window — consider a smaller expense increase or a bigger extra saving.`}</p>
+  `;
+  const labels = traj.map((_,i)=> i%Math.max(1,Math.round(monthsN/6))===0 ? "M"+i : "");
+  drawLineChart("simChart", [{data:traj, color:"#2dd4bf"}], {labels});
+});
+
+/* ============================================================
+   RENDER: CALCULATORS
+============================================================ */
+function emiFormula(P,annualRate,n){
+  const r = annualRate/12/100;
+  if(r===0) return P/n;
+  return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+}
+document.getElementById("calcEmiBtn").addEventListener("click", ()=>{
+  const P = Number(document.getElementById("calcAmt").value)||0;
+  const rate = Number(document.getElementById("calcRate").value)||0;
+  const n = Number(document.getElementById("calcTenure").value)||1;
+  const emi = emiFormula(P,rate,n);
+  const total = emi*n;
+  document.getElementById("emiResult").innerHTML = `
+    <div class="sim-result"><div class="big">${fmt(emi)}/mo</div>
+    <p class="card-sub">Total payable: ${fmt(total)} · Total interest: ${fmt(total-P)}</p></div>`;
+});
+document.getElementById("calcFundBtn").addEventListener("click", ()=>{
+  const exp = Number(document.getElementById("calcExpenses").value)||0;
+  const cover = Number(document.getElementById("calcCover").value)||6;
+  document.getElementById("fundTargetResult").innerHTML = `
+    <div class="sim-result"><div class="big">${fmt(exp*cover)}</div>
+    <p class="card-sub">Target buffer for ${cover} months of expenses at ${fmt(exp)}/month.</p></div>`;
+});
+document.getElementById("calcSipBtn").addEventListener("click", ()=>{
+  const monthly = Number(document.getElementById("calcSip").value)||0;
+  const rate = Number(document.getElementById("calcSipRate").value)||0;
+  const years = Number(document.getElementById("calcSipYears").value)||1;
+  const n = years*12; const r = rate/12/100;
+  const fv = r===0 ? monthly*n : monthly*((Math.pow(1+r,n)-1)/r)*(1+r);
+  const invested = monthly*n;
+  document.getElementById("sipResult").innerHTML = `
+    <div class="sim-result"><div class="big">${fmt(fv)}</div>
+    <p class="card-sub">Invested: ${fmt(invested)} · Estimated gains: ${fmt(fv-invested)} over ${years} years at ${rate}% p.a. (illustrative, not guaranteed).</p></div>`;
+});
+document.getElementById("calcTaxBtn").addEventListener("click", ()=>{
+  const inc = Number(document.getElementById("calcTaxIncome").value)||0;
+  const rate = Number(document.getElementById("calcTaxRate").value)||0;
+  document.getElementById("taxResult").innerHTML = `
+    <div class="sim-result"><div class="big">${fmt(inc*rate/100)}/mo</div>
+    <p class="card-sub">Set this aside each month into a separate account so tax time doesn't surprise you. Consult a CA for exact liability under presumptive taxation (Section 44ADA) if applicable.</p></div>`;
+});
+
+/* ============================================================
+   RENDER: REPORTS
+============================================================ */
+function renderReports(){
+  const h = healthScore();
+  const inc = thisMonthIncome(), exp = thisMonthExpenses();
+  const cats = expensesByCategory();
+  document.getElementById("reportBody").innerHTML = `
+    <p style="color:var(--ink-2); font-size:12.5px; margin-bottom:14px; font-family:var(--font-mono);">Generated ${new Date().toLocaleDateString("en-IN",{day:'numeric',month:'long',year:'numeric'})}</p>
+    <div class="grid grid-3" style="margin-bottom:18px;">
+      <div class="card"><div class="card-title">Health score</div><div class="card-value">${h.score}/100</div></div>
+      <div class="card"><div class="card-title">Income (this month)</div><div class="card-value">${fmt(inc)}</div></div>
+      <div class="card"><div class="card-title">Expenses (this month)</div><div class="card-value">${fmt(exp)}</div></div>
+    </div>
+    <h3 style="font-family:var(--font-display); font-size:15px; margin-bottom:8px;">Expense breakdown</h3>
+    <table><thead><tr><th>Category</th><th>Amount</th></tr></thead><tbody>
+      ${Object.entries(cats).length ? Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<tr><td>${k}</td><td style="font-family:var(--font-mono)">${fmt(v)}</td></tr>`).join("") : `<tr><td colspan="2" class="empty">No expenses this month</td></tr>`}
+    </tbody></table>
+    <h3 style="font-family:var(--font-display); font-size:15px; margin:18px 0 8px;">Loan status</h3>
+    <p style="font-size:13px; color:var(--ink-1);">Outstanding: ${fmt(state.loan.principal)} · EMI: ${fmt(state.loan.emi)}/mo · Rate: ${state.loan.rate}% p.a.</p>
+    <h3 style="font-family:var(--font-display); font-size:15px; margin:18px 0 8px;">Emergency fund</h3>
+    <p style="font-size:13px; color:var(--ink-1);">Balance: ${fmt(state.fund.balance)} · Target: ${fmt(avgMonthlyExpenses()*(state.fund.targetMonths||6))} (${state.fund.targetMonths} months)</p>
+  `;
+}
+
+/* ============================================================
+   RENDER: LEARN
+============================================================ */
+const tips = [
+  {t:"Pay yourself first", d:"The moment a client payment lands, move a fixed slice — even 10% — to your emergency fund before it mixes with spending money."},
+  {t:"Budget on your worst month", d:"Freelance income swings. Base fixed commitments like EMI and rent on your lowest recent month, not your average."},
+  {t:"Separate tax money immediately", d:"Freelancers don't have TDS smoothing things out. Set aside 15–20% of every payment into a separate account for taxes."},
+  {t:"Automate the emergency fund", d:"A standing instruction that moves money right after typical payment dates removes the willpower problem entirely."},
+  {t:"Don't prepay the loan before you have a buffer", d:"Build at least 3 months of expenses in savings before aggressively prepaying — otherwise a dry spell forces you into debt again."},
+  {t:"Track every invoice", d:"Unpaid or late invoices are a freelancer's silent cash-flow killer. Log income the day it's actually received, not promised."}
+];
+function renderLearn(){
+  document.getElementById("tipsGrid").innerHTML = tips.map(t=>`<div class="tip-card"><b>${t.t}</b>${t.d}</div>`).join("");
+
+  const items = [
+    "Set up a separate bank account for tax set-aside",
+    "Automate a transfer to emergency fund after each payment",
+    "Review subscriptions and cancel unused ones",
+    "Confirm EMI auto-debit date matches typical payment cycle",
+    "Set a concrete 3–6 month savings goal",
+    "Check loan prepayment charges with the lender",
+    "Back up client contracts and invoices",
+    "Review budget vs actual at month-end"
+  ];
+  const list = document.getElementById("checklistItems");
+  list.innerHTML = items.map((it,i)=>{
+    const done = !!state.checklist[i];
+    return `<li class="${done?'done':''}"><input type="checkbox" id="chk${i}" data-chk="${i}" ${done?'checked':''}><label for="chk${i}">${it}</label></li>`;
+  }).join("");
+  list.querySelectorAll("[data-chk]").forEach(cb=>{
+    cb.addEventListener("change", ()=>{
+      state.checklist[cb.getAttribute("data-chk")] = cb.checked;
+      save(); renderLearn();
+    });
+  });
+
+  document.getElementById("resourceList").innerHTML = `
+    <li><b>RBI — Financial Education resources</b>Guides on budgeting, credit and loans from India's central bank.</li>
+    <li><b>Income Tax Dept — Presumptive taxation (44ADA)</b>Simplified tax filing relevant to many freelancers and consultants.</li>
+    <li><b>NPS / PPF basics</b>Long-horizon, low-risk options worth understanding once your emergency fund is solid.</li>
+    <li><b>Loan prepayment rules</b>Check your loan agreement for prepayment charges and lock-in periods before making extra payments.</li>
+  `;
+
+  const prompts = [
+    "Review my monthly expenses and suggest 3 categories where a freelancer could realistically cut back.",
+    "Explain the difference between an emergency fund and a sinking fund, with examples for a freelancer with an education loan.",
+    "Help me draft a simple monthly budget template for irregular freelance income.",
+    "What questions should I ask my bank before prepaying an education loan?"
+  ];
+  document.getElementById("promptGrid").innerHTML = prompts.map(p=>`
+    <div class="prompt-card">${p}<button data-copy="${encodeURIComponent(p)}">Copy</button></div>
+  `).join("");
+  document.querySelectorAll("[data-copy]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const text = decodeURIComponent(btn.getAttribute("data-copy"));
+      navigator.clipboard && navigator.clipboard.writeText(text).then(()=>{ btn.textContent="Copied"; setTimeout(()=>btn.textContent="Copy",1200); });
+    });
+  });
+}
+
+/* ============================================================
+   UTIL
+============================================================ */
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let flashTimeout;
+function flash(msg){
+  let el = document.getElementById("flashMsg");
+  if(!el){
+    el = document.createElement("div"); el.id="flashMsg";
+    el.style.cssText = "position:fixed; bottom:20px; right:20px; background:var(--navy-800); border:1px solid var(--teal); color:var(--ink-0); padding:10px 16px; border-radius:9px; font-size:13px; z-index:999; box-shadow:0 8px 24px rgba(0,0,0,.3);";
+    document.body.appendChild(el);
+  }
+  el.textContent = msg; el.style.opacity="1";
+  clearTimeout(flashTimeout);
+  flashTimeout = setTimeout(()=>{ el.style.transition="opacity .4s"; el.style.opacity="0"; }, 1800);
+}
+
+/* ============================================================
+   MASTER RENDER
+============================================================ */
+function renderAll(){
+  const active = document.querySelector(".view.active").id.replace("view-","");
+  renderOverview();
+  if(active==="income") renderIncome();
+  if(active==="expenses") renderExpenses();
+  if(active==="budget") renderBudget();
+  if(active==="loan") renderLoan();
+  if(active==="subscriptions") renderSubs();
+  if(active==="emergency") renderFund();
+  if(active==="goals") renderGoals();
+  if(active==="insights") renderInsights();
+  if(active==="reports") renderReports();
+  if(active==="learn") renderLearn();
+}
+
+window.addEventListener("resize", ()=>{ renderAll(); });
+document.getElementById("incDate").value = new Date().toISOString().slice(0,10);
+document.getElementById("expDate").value = new Date().toISOString().slice(0,10);
+
+renderAll();
+})();
+</script>
+</body>
+</html>
