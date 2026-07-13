@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Workflow Architect — React + Python Portfolio Build</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root{
+  --bg:#0b0f14; --bg2:#10161d; --panel:#131a22; --line:#22303c;
+  --text:#dce4ea; --muted:#8494a0;
+  --py:#4b8bbe; --py-dim:#2d5a80;
+  --react:#61dafb;
+  --amber:#e3b341;
+  --green:#3fb950;
+  --radius:10px;
+  --mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+  --sans:-apple-system,'Inter',Segoe UI,Roboto,sans-serif;
+}
+[data-theme="light"]{
+  --bg:#f3f5f7; --bg2:#ffffff; --panel:#ffffff; --line:#dbe2e8;
+  --text:#182430; --muted:#5a6b78;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);transition:background .3s,color .3s;line-height:1.5;}
+h1,h2,h3,h4{font-family:var(--mono);letter-spacing:-0.01em;margin:0 0 .4em;}
+a{color:var(--react);}
+code, .mono{font-family:var(--mono);}
+::selection{background:var(--py-dim);color:#fff;}
+
+/* ---- top bar / pipeline signature ---- */
+.topbar{position:sticky;top:0;z-index:50;background:var(--bg2);border-bottom:1px solid var(--line);}
+.topbar-inner{max-width:1180px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:16px;}
+.brand{font-family:var(--mono);font-weight:700;font-size:14px;white-space:nowrap;}
+.brand span{color:var(--py);}
+.pipeline{flex:1;display:flex;align-items:center;gap:0;overflow-x:auto;}
+.pipe-node{display:flex;align-items:center;white-space:nowrap;}
+.pipe-dot{width:10px;height:10px;border-radius:50%;background:var(--line);border:2px solid var(--line);flex:0 0 auto;transition:.25s;}
+.pipe-dot.done{background:var(--green);border-color:var(--green);}
+.pipe-dot.active{border-color:var(--react);box-shadow:0 0 0 4px rgba(97,218,251,.15);}
+.pipe-label{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 6px;}
+.pipe-line{width:28px;height:2px;background:var(--line);}
+.topbtn{background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:12px;cursor:pointer;}
+.topbtn:hover{border-color:var(--py);}
+
+/* ---- hero ---- */
+.hero{max-width:1180px;margin:0 auto;padding:56px 24px 32px;}
+.hero-tag{font-family:var(--mono);color:var(--amber);font-size:12px;text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px;}
+.hero h1{font-size:clamp(28px,4.4vw,46px);max-width:800px;line-height:1.15;}
+.hero h1 .py{color:var(--py);} .hero h1 .rc{color:var(--react);}
+.hero p{color:var(--muted);max-width:640px;font-size:16px;margin-top:14px;}
+.hero-meta{display:flex;gap:24px;margin-top:28px;flex-wrap:wrap;}
+.meta-chip{border:1px solid var(--line);background:var(--panel);padding:10px 14px;border-radius:var(--radius);font-family:var(--mono);font-size:12.5px;color:var(--muted);}
+.meta-chip b{color:var(--text);}
+
+/* ---- terminal signature block ---- */
+.term{max-width:1180px;margin:20px auto 0;padding:0 24px;}
+.term-window{background:var(--bg2);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.term-bar{display:flex;align-items:center;gap:6px;padding:9px 14px;border-bottom:1px solid var(--line);}
+.term-bar span{width:10px;height:10px;border-radius:50%;background:var(--line);}
+.term-bar .fname{margin-left:10px;font-family:var(--mono);font-size:12px;color:var(--muted);}
+.term-body{padding:16px 20px;font-family:var(--mono);font-size:13px;color:#9fd3a3;white-space:pre-wrap;min-height:90px;}
+.term-body .prompt{color:var(--py);} .term-body .out{color:var(--muted);}
+
+/* ---- section wrap ---- */
+.section{max-width:1180px;margin:0 auto;padding:64px 24px 0;}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+.section-head h2{font-size:22px;}
+.section-head .sub{color:var(--muted);font-size:13px;}
+
+/* ---- stage list (git-log style) ---- */
+.stagelist{position:relative;padding-left:26px;}
+.stagelist::before{content:'';position:absolute;left:6px;top:8px;bottom:8px;width:2px;background:var(--line);}
+.stage{position:relative;margin-bottom:14px;}
+.stage-node{position:absolute;left:-26px;top:20px;width:14px;height:14px;border-radius:50%;background:var(--bg2);border:2px solid var(--py);}
+.stage.complete .stage-node{background:var(--green);border-color:var(--green);}
+.stage-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);}
+.stage-head{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;}
+.stage-head:hover{background:rgba(97,218,251,.03);}
+.stage-idx{font-family:var(--mono);font-size:12px;color:var(--muted);}
+.stage-title{flex:1;font-family:var(--mono);font-size:15px;}
+.stage-time{font-family:var(--mono);font-size:11.5px;color:var(--amber);border:1px solid var(--line);padding:3px 8px;border-radius:5px;}
+.stage-chk{width:17px;height:17px;accent-color:var(--green);}
+.chev{color:var(--muted);transition:transform .2s;}
+.stage.open .chev{transform:rotate(90deg);}
+.stage-body{max-height:0;overflow:hidden;transition:max-height .35s ease;}
+.stage.open .stage-body{max-height:4000px;}
+.stage-body-inner{padding:4px 18px 22px;border-top:1px solid var(--line);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:16px;}
+@media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+.blocklabel{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin-bottom:8px;}
+ul.tight{margin:0;padding-left:18px;}
+ul.tight li{margin-bottom:6px;font-size:13.8px;}
+.tools{display:flex;flex-direction:column;gap:10px;margin-top:6px;}
+.tool{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--bg2);}
+.tool .tname{font-family:var(--mono);font-size:13.5px;font-weight:700;}
+.tool .twhy{color:var(--muted);font-size:12.8px;margin-top:3px;}
+.tool.alt{opacity:.75;border-style:dashed;}
+.prompt-box{background:var(--bg2);border:1px solid var(--line);border-left:3px solid var(--py);border-radius:6px;padding:10px 12px;font-family:var(--mono);font-size:12.6px;color:#bcd8ec;margin-top:8px;position:relative;}
+.copybtn{position:absolute;right:8px;top:8px;font-family:var(--mono);font-size:10.5px;background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:4px;padding:3px 7px;cursor:pointer;}
+.copybtn:hover{color:var(--react);}
+.mistakes li{color:#e69a9a;}
+.expected{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px;}
+.notewrap{margin-top:14px;}
+textarea.note{width:100%;background:var(--bg2);border:1px dashed var(--line);border-radius:8px;color:var(--text);font-family:var(--sans);font-size:12.8px;padding:10px;min-height:56px;resize:vertical;}
+.bookmark-btn{background:none;border:1px solid var(--line);border-radius:6px;color:var(--muted);font-family:var(--mono);font-size:11px;padding:4px 9px;cursor:pointer;}
+.bookmark-btn.on{color:var(--amber);border-color:var(--amber);}
+
+/* ---- decision tree ---- */
+.tree{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;}
+.tnode{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:12.6px;cursor:pointer;display:inline-block;margin:4px;}
+.tnode:hover{border-color:var(--react);}
+.tnode.picked{border-color:var(--green);color:var(--green);}
+.tans{margin-top:10px;padding:12px 14px;background:var(--bg2);border-left:3px solid var(--react);border-radius:6px;font-size:13px;display:none;}
+.tans.show{display:block;}
+
+/* ---- comparison table ---- */
+table.cmp{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+table.cmp th,table.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;}
+table.cmp th{font-family:var(--mono);color:var(--muted);font-size:11.5px;text-transform:uppercase;background:var(--bg2);}
+table.cmp tr:last-child td{border-bottom:none;}
+.tag{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--py-dim);color:#fff;margin-right:4px;}
+
+/* ---- progress bar overall ---- */
+.progress-wrap{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px;display:flex;align-items:center;gap:16px;}
+.progress-track{flex:1;height:8px;background:var(--bg2);border-radius:6px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--py),var(--react));width:0%;transition:width .4s;}
+.progress-pct{font-family:var(--mono);font-size:13px;min-width:42px;text-align:right;}
+
+/* ---- footer sections ---- */
+.footgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+@media(max-width:820px){.footgrid{grid-template-columns:1fr;}}
+.footcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;}
+.footcard h3{font-size:14px;color:var(--react);}
+.pillbox{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.pill{font-family:var(--mono);font-size:11.5px;background:var(--bg2);border:1px solid var(--line);padding:4px 9px;border-radius:14px;}
+
+footer{max-width:1180px;margin:0 auto;padding:50px 24px 90px;color:var(--muted);font-size:12.5px;text-align:center;border-top:1px solid var(--line);margin-top:60px;}
+
+@media print{
+  .topbar,.term,.bookmark-btn,.copybtn,.notewrap,textarea{display:none!important;}
+  body{background:#fff;color:#000;}
+  .stage-body{max-height:none!important;}
+  .stage-card,.panel{border-color:#ccc!important;}
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">workflow<span>.arch</span></div>
+    <div class="pipeline" id="pipeline"></div>
+    <button class="topbtn" onclick="window.print()">Print</button>
+    <button class="topbtn" id="themeBtn" onclick="toggleTheme()">Light</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-tag">// full-stack build plan</div>
+  <h1>Ship a <span class="py">Python</span> + <span class="rc">React</span> portfolio project, end to end.</h1>
+  <p>A complete, stage-by-stage workflow for planning, building, and launching a personal side project with a React frontend and a Python backend — with the AI tools to use at each step, why, and exact prompts to run.</p>
+  <div class="hero-meta">
+    <div class="meta-chip">Stack: <b>React + FastAPI</b></div>
+    <div class="meta-chip">Scope: <b>Personal portfolio / side project</b></div>
+    <div class="meta-chip">Est. total time: <b>~35–55 hrs</b></div>
+    <div class="meta-chip">Stages: <b>7</b></div>
+  </div>
+</div>
+
+<div class="term">
+  <div class="term-window">
+    <div class="term-bar"><span></span><span></span><span></span><span class="fname">plan.md — overview</span></div>
+    <div class="term-body" id="termBody"></div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-head">
+    <h2>Overall progress</h2>
+    <div class="sub">Checks persist locally in your browser</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="progFill"></div></div>
+    <div class="progress-pct" id="progPct">0%</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-head">
+    <h2>The workflow</h2>
+    <div class="sub">Click a stage to expand · check off tasks as you go</div>
+  </div>
+  <div class="stagelist" id="stageList"></div>
+</div>
+
+<div class="section">
+  <div class="section-head"><h2>Decision tree — pick your backend framework</h2></div>
+  <div class="tree" id="decisionTree"></div>
+</div>
+
+<div class="section">
+  <div class="section-head"><h2>Tool comparison — AI coding assistants for this build</h2></div>
+  <table class="cmp">
+    <thead><tr><th>Tool</th><th>Best for</th><th>Strength</th><th>Watch-out</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag">IDE</span>Claude Code</td><td>Full-stack scaffolding & refactors</td><td>Understands whole repo, runs commands, multi-file edits</td><td>Best from a terminal/IDE, not a chat box</td><td>API usage-based</td></tr>
+      <tr><td><span class="tag">IDE</span>Cursor</td><td>Fast in-editor iteration</td><td>Inline diffs, tab-complete feel</td><td>Context window smaller for huge repos</td><td>Subscription</td></tr>
+      <tr><td><span class="tag">Design</span>Claude (chat)</td><td>Architecture planning, copywriting, code review</td><td>Strong reasoning, long context for specs</td><td>No direct file execution in chat</td><td>Free/Pro</td></tr>
+      <tr><td><span class="tag">Design</span>v0 / Claude Design</td><td>UI scaffolding from prompts</td><td>Generates React + Tailwind fast</td><td>Needs design polish pass after</td><td>Free tier + paid</td></tr>
+      <tr><td><span class="tag">QA</span>GitHub Copilot</td><td>Inline test writing</td><td>Tight IDE integration</td><td>Weaker on cross-file reasoning</td><td>Subscription</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section">
+  <div class="section-head"><h2>Workflow summary</h2></div>
+  <p style="color:var(--muted);max-width:820px;font-size:14.5px;">This build takes a portfolio idea from a one-line concept to a deployed React + Python (FastAPI) application. Planning and design compress from days to hours by using Claude for spec-writing and UI scaffolding; the middle stages (backend, frontend, integration) benefit most from an agentic coding tool like Claude Code that can read and edit the whole repo; testing, deployment, and iteration close the loop with lighter-weight, targeted AI use. Budget roughly 35–55 hours end to end for a solo builder working part-time, most of it in the build stage.</p>
+</div>
+
+<div class="section">
+  <div class="footgrid">
+    <div class="footcard">
+      <h3>Recommended AI stack</h3>
+      <div class="pillbox">
+        <span class="pill">Claude (planning & docs)</span>
+        <span class="pill">Claude Code (build & refactor)</span>
+        <span class="pill">Claude Design / v0 (UI)</span>
+        <span class="pill">Copilot (inline tests)</span>
+        <span class="pill">ChatGPT (quick lookups, optional)</span>
+      </div>
+    </div>
+    <div class="footcard">
+      <h3>Learning resources</h3>
+      <div class="pillbox">
+        <span class="pill">FastAPI official docs</span>
+        <span class="pill">React.dev</span>
+        <span class="pill">docs.claude.com — Claude Code</span>
+        <span class="pill">MDN Web Docs</span>
+        <span class="pill">Full Stack Open (Helsinki)</span>
+      </div>
+    </div>
+    <div class="footcard">
+      <h3>Communities</h3>
+      <div class="pillbox">
+        <span class="pill">r/webdev</span>
+        <span class="pill">r/FastAPI</span>
+        <span class="pill">Reactiflux Discord</span>
+        <span class="pill">Indie Hackers</span>
+        <span class="pill">Dev.to</span>
+      </div>
+    </div>
+    <div class="footcard">
+      <h3>Search keywords</h3>
+      <div class="pillbox">
+        <span class="pill">"FastAPI React portfolio"</span>
+        <span class="pill">"deploy FastAPI Vercel Render"</span>
+        <span class="pill">"React project structure 2026"</span>
+        <span class="pill">"Claude Code full-stack workflow"</span>
+      </div>
+    </div>
+    <div class="footcard">
+      <h3>Additional AI prompts</h3>
+      <div class="pillbox">
+        <span class="pill">"Audit my repo for security gaps"</span>
+        <span class="pill">"Write a README for this project"</span>
+        <span class="pill">"Suggest 5 features that'd impress recruiters"</span>
+      </div>
+    </div>
+    <div class="footcard">
+      <h3>Future automation opportunities</h3>
+      <div class="pillbox">
+        <span class="pill">CI pipeline auto-review via Claude</span>
+        <span class="pill">Auto-generated changelogs</span>
+        <span class="pill">AI-drafted blog posts from commits</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>AI Workflow Architect — generated for a React + Python full-stack portfolio project. Your notes and checkmarks are saved locally in this browser only.</footer>
+
+<script>
+const STAGES = [
+ {
+  id:"plan", title:"1 · Plan & Scope", time:"2–4 hrs",
+  objectives:["Define what the portfolio project actually demonstrates","Pick one core feature that's genuinely interesting, not a generic CRUD app","Write a one-page spec before touching code"],
+  tasks:["Write a 3-sentence pitch for the project","List 3 features: 1 core, 2 stretch","Sketch the data model on paper or in a doc","Decide hosting targets (frontend + backend)"],
+  tools:[
+    {name:"Claude (chat)", why:"Best for turning a vague idea into a structured spec and pressure-testing scope — long context, strong reasoning about trade-offs.", alt:false},
+    {name:"Notion AI", why:"If you already live in Notion, useful for lightweight spec docs.", alt:true}
+  ],
+  prompts:["I want to build a portfolio project using React and Python (FastAPI). Here's my idea: [idea]. Help me scope a v1 I can finish in ~40 hours — cut anything not essential to the core demo."],
+  best:["Write the spec before opening an editor","Pick a feature that's specific to you, not a tutorial clone","Timebox scoping to one sitting"],
+  mistakes:["Scoping a project too broad to finish","Skipping the spec and designing the schema mid-code","Choosing a feature with no visual payoff for a portfolio"],
+  expected:"A one-page spec: problem, core feature, data model sketch, and a cut-list of stretch goals.",
+  tips:"Ask Claude to argue against your own idea for 2 minutes — it surfaces scope creep fast."
+ },
+ {
+  id:"design", title:"2 · Design & Architecture", time:"3–5 hrs",
+  objectives:["Design the API contract before the UI","Decide on component structure and state management approach","Produce wireframes for the 2–3 key screens"],
+  tasks:["Draft REST endpoints and response shapes","Wireframe the main screen(s)","Choose state approach (Context vs a lib)","Decide auth approach if any"],
+  tools:[
+    {name:"Claude Design / v0", why:"Fastest way to get a real React component layout from a text description, which you then refine rather than build from a blank file.", alt:false},
+    {name:"Claude (chat)", why:"Great for drafting the API contract (routes, request/response JSON) before code exists.", alt:false},
+    {name:"Figma (manual)", why:"If you want pixel control over the UI before building.", alt:true}
+  ],
+  prompts:["Design a REST API contract in FastAPI for this feature: [feature]. Give me routes, request/response JSON, and status codes.","Generate a React component layout (with Tailwind) for a dashboard screen showing: [list what it shows]."],
+  best:["Design the API contract before either frontend or backend code exists","Keep the first UI pass ugly-but-functional; polish later","Name endpoints by resource, not by screen"],
+  mistakes:["Designing the UI before the data model is settled, causing rework","Over-engineering auth for a portfolio piece that doesn't need it","Copying a generic dashboard template that doesn't fit the data"],
+  expected:"An API contract doc + rough wireframe or component sketch for each key screen.",
+  tips:"Feed the API contract to Claude Code later as the source of truth — it keeps both sides consistent."
+ },
+ {
+  id:"backend", title:"3 · Backend Build (Python)", time:"8–12 hrs",
+  objectives:["Stand up a FastAPI project with clean structure","Implement the endpoints from the design stage","Add a database layer and basic validation"],
+  tasks:["Scaffold project (routers, models, schemas)","Implement endpoints one resource at a time","Wire up a database (SQLite for a portfolio piece is fine)","Add request validation with Pydantic"],
+  tools:[
+    {name:"Claude Code", why:"Repo-aware agentic coding — it can scaffold the FastAPI project structure, write multiple files consistently, and run the server to check itself.", alt:false},
+    {name:"GitHub Copilot", why:"Good for fast inline completions once the structure exists.", alt:true}
+  ],
+  prompts:["Scaffold a FastAPI project with routers/models/schemas folders for these resources: [list]. Use SQLModel with SQLite.","Implement the /projects endpoints per this contract: [paste contract]. Include Pydantic validation and error handling."],
+  best:["Build one resource fully (model→schema→route→test) before starting the next","Keep business logic out of route handlers","Use Pydantic schemas to separate DB models from API responses"],
+  mistakes:["Mixing database models directly into API responses","Skipping input validation because 'it's just a portfolio project'","Letting an AI agent write the whole backend in one shot without reviewing diffs"],
+  expected:"A running FastAPI app with documented endpoints (auto-docs at /docs) and a working database layer.",
+  tips:"Ask Claude Code to run the dev server and hit its own endpoints with curl to self-verify before you review."
+ },
+ {
+  id:"frontend", title:"4 · Frontend Build (React)", time:"8–12 hrs",
+  objectives:["Build the UI against the real API","Implement state and data fetching","Get responsive layout working early, not last"],
+  tasks:["Scaffold with Vite","Build components top-down: page → sections → primitives","Connect fetch calls to the FastAPI backend","Handle loading/error/empty states"],
+  tools:[
+    {name:"Claude Code", why:"Can scaffold the Vite/React project, wire components to the live API, and iterate across multiple files in one pass.", alt:false},
+    {name:"Claude Design / v0", why:"Good for generating a first-pass component when you're starting from nothing.", alt:true}
+  ],
+  prompts:["Build a React (Vite) frontend that consumes this FastAPI contract: [paste]. Include loading, error, and empty states for each view.","Refactor this component to split data-fetching from presentation."],
+  best:["Handle loading/error/empty states from the first version, not as an afterthought","Keep components small and named by what they show","Test against the real backend early, not mocked data only"],
+  mistakes:["Building against mocked data for too long, then discovering contract mismatches","Ignoring empty and error states until the end","One giant App.jsx instead of composed components"],
+  expected:"A working React app that reads/writes real data through the FastAPI backend, responsive on mobile.",
+  tips:"Ask the AI to add a network error simulator toggle temporarily — it forces you to design real error states."
+ },
+ {
+  id:"integrate", title:"5 · Integration & Polish", time:"4–6 hrs",
+  objectives:["Connect frontend and backend fully (CORS, env config)","Polish visual details and micro-interactions","Add any auth or user-facing polish"],
+  tasks:["Configure CORS and environment variables","Add transitions/loading skeletons","Proofread all UI copy","Cross-browser and mobile check"],
+  tools:[
+    {name:"Claude Code", why:"Handles the fiddly cross-cutting fixes — CORS config, env files, small bugs that span both codebases.", alt:false},
+    {name:"Claude (chat)", why:"Useful for a copy pass on UI text — empty states, error messages, button labels.", alt:true}
+  ],
+  prompts:["Review this UI copy for tone and clarity: [paste strings]. Make it plain, active-voice, consistent.","Debug this CORS error between my FastAPI backend and Vite dev server: [paste error]."],
+  best:["Do a dedicated copy pass — buttons, errors, empty states — near the end","Test the full flow in an incognito window as a fresh user would","Fix CORS/env issues before touching visual polish"],
+  mistakes:["Polishing visuals before core flows actually work end to end","Leaving default error messages like 'undefined' or raw stack traces visible","Forgetting to test on an actual phone, not just resized browser"],
+  expected:"A fully connected app with consistent copy, working across desktop and mobile viewports.",
+  tips:"Read every button and error message out loud — awkward phrasing is obvious that way."
+ },
+ {
+  id:"test", title:"6 · Testing & QA", time:"3–5 hrs",
+  objectives:["Catch regressions before deploy","Verify the core user flow works reliably","Check edge cases in forms and data"],
+  tasks:["Write unit tests for core backend logic","Add a couple of frontend integration tests for the critical path","Manually test edge cases (empty inputs, long text, slow network)"],
+  tools:[
+    {name:"Claude Code", why:"Can generate targeted tests for the riskiest logic and run the suite to confirm it passes.", alt:false},
+    {name:"GitHub Copilot", why:"Fast for boilerplate test scaffolding inline.", alt:true}
+  ],
+  prompts:["Write pytest unit tests for this FastAPI route, covering the happy path and 2 edge cases: [paste code].","Write a React Testing Library test for the critical user flow: [describe flow]."],
+  best:["Test the riskiest logic first (data validation, calculations), not everything equally","Include at least one test for a bad/empty input","Run the full test suite before every deploy"],
+  mistakes:["Writing tests only for the easy, already-correct code paths","Skipping manual testing on slow/throttled network","No test coverage for form validation edge cases"],
+  expected:"A small but meaningful test suite covering the core flow, passing consistently.",
+  tips:"Ask the AI to suggest 3 edge cases you haven't thought of — it's often better at this than writing the tests themselves."
+ },
+ {
+  id:"deploy", title:"7 · Deploy & Share", time:"3–6 hrs",
+  objectives:["Deploy backend and frontend to production","Write a portfolio-ready README and case study","Share the project for feedback"],
+  tasks:["Deploy FastAPI backend (Render/Fly.io/Railway)","Deploy React frontend (Vercel/Netlify)","Write a README with screenshots and what you learned","Post for feedback in a relevant community"],
+  tools:[
+    {name:"Claude (chat)", why:"Strong for writing the README/case-study narrative — what the project does, why you built it, what you'd improve.", alt:false},
+    {name:"Claude Code", why:"Can help debug deploy-specific config issues (build commands, env vars) quickly.", alt:true}
+  ],
+  prompts:["Write a portfolio README for this project: [describe]. Include what it does, tech stack, what I learned, and next steps.","Debug this deployment build failure: [paste log]."],
+  best:["Include 2–3 screenshots or a short demo GIF in the README","Write one honest paragraph on what you'd do differently — recruiters notice this","Get feedback from one real person before calling it done"],
+  mistakes:["Shipping with no README or a copy-pasted generic one","Never asking anyone to actually try the deployed app","Leaving debug/console logs and test data visible in production"],
+  expected:"A live, deployed app with a clear README, ready to link from a resume or portfolio site.",
+  tips:"Record a 60-second screen capture walking through the app — it's often more persuasive than a paragraph of text."
+ }
+];
+
+const state = JSON.parse(localStorage.getItem('wf_state')||'{}');
+function saveState(){ localStorage.setItem('wf_state', JSON.stringify(state)); }
+
+function buildPipeline(){
+  const el = document.getElementById('pipeline');
+  el.innerHTML='';
+  STAGES.forEach((s,i)=>{
+    const node=document.createElement('div'); node.className='pipe-node';
+    const dot=document.createElement('div'); dot.className='pipe-dot'; dot.id='dot-'+s.id;
+    const label=document.createElement('div'); label.className='pipe-label'; label.textContent=s.title.split('· ')[1];
+    node.appendChild(dot); node.appendChild(label);
+    el.appendChild(node);
+    if(i<STAGES.length-1){ const line=document.createElement('div'); line.className='pipe-line'; el.appendChild(line); }
+  });
+}
+
+function stageDone(s){
+  const t = state[s.id]?.tasks || [];
+  return s.tasks.every((_,i)=>t[i]);
+}
+
+function renderStages(){
+  const wrap = document.getElementById('stageList');
+  wrap.innerHTML='';
+  STAGES.forEach((s,idx)=>{
+    if(!state[s.id]) state[s.id]={tasks:[], note:'', bookmark:false, open:false};
+    const done = stageDone(s);
+    const div=document.createElement('div');
+    div.className='stage'+(done?' complete':'')+(state[s.id].open?' open':'');
+    div.innerHTML = `
+      <div class="stage-node"></div>
+      <div class="stage-card">
+        <div class="stage-head" onclick="toggleStage('${s.id}')">
+          <span class="stage-idx">${String(idx+1).padStart(2,'0')}</span>
+          <span class="stage-title">${s.title}</span>
+          <span class="stage-time">${s.time}</span>
+          <button class="bookmark-btn ${state[s.id].bookmark?'on':''}" onclick="event.stopPropagation();toggleBookmark('${s.id}')">★ save</button>
+          <span class="chev">›</span>
+        </div>
+        <div class="stage-body"><div class="stage-body-inner">
+          <div class="grid2">
+            <div>
+              <div class="blocklabel">Objectives</div>
+              <ul class="tight">${s.objectives.map(o=>`<li>${o}</li>`).join('')}</ul>
+            </div>
+            <div>
+              <div class="blocklabel">Tasks</div>
+              <ul class="tight" style="list-style:none;padding-left:0;">
+                ${s.tasks.map((t,i)=>`<li><label style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" class="stage-chk" ${state[s.id].tasks[i]?'checked':''} onchange="toggleTask('${s.id}',${i})"><span>${t}</span></label></li>`).join('')}
+              </ul>
+            </div>
+          </div>
+          <div class="grid2">
+            <div>
+              <div class="blocklabel">Best AI tools</div>
+              <div class="tools">
+                ${s.tools.map(t=>`<div class="tool ${t.alt?'alt':''}"><div class="tname">${t.name}${t.alt?' (alternative)':''}</div><div class="twhy">${t.why}</div></div>`).join('')}
+              </div>
+            </div>
+            <div>
+              <div class="blocklabel">Prompt examples</div>
+              ${s.prompts.map(p=>`<div class="prompt-box">${p}<button class="copybtn" onclick="copyText(this,'${p.replace(/'/g,"\\'")}')">copy</button></div>`).join('')}
+            </div>
+          </div>
+          <div class="grid2">
+            <div>
+              <div class="blocklabel">Best practices</div>
+              <ul class="tight">${s.best.map(b=>`<li>${b}</li>`).join('')}</ul>
+            </div>
+            <div>
+              <div class="blocklabel">Common mistakes</div>
+              <ul class="tight mistakes">${s.mistakes.map(m=>`<li>${m}</li>`).join('')}</ul>
+            </div>
+          </div>
+          <div class="blocklabel" style="margin-top:16px;">Expected output</div>
+          <div class="expected">${s.expected}</div>
+          <div class="blocklabel" style="margin-top:14px;">Efficiency tip</div>
+          <div class="expected" style="border-left:3px solid var(--amber);">${s.tips}</div>
+          <div class="notewrap">
+            <div class="blocklabel">Your notes</div>
+            <textarea class="note" placeholder="Jot notes for this stage…" onchange="saveNote('${s.id}',this.value)">${state[s.id].note||''}</textarea>
+          </div>
+        </div></div>
+      </div>`;
+    wrap.appendChild(div);
+  });
+  updateProgress();
+}
+
+function toggleStage(id){ state[id].open=!state[id].open; saveState(); renderStages(); document.getElementById('dot-'+id).classList.add('active'); }
+function toggleTask(id,i){ state[id].tasks[i]=!state[id].tasks[i]; saveState(); renderStages(); }
+function toggleBookmark(id){ state[id].bookmark=!state[id].bookmark; saveState(); renderStages(); }
+function saveNote(id,val){ state[id].note=val; saveState(); }
+function copyText(btn,txt){ navigator.clipboard.writeText(txt); const o=btn.textContent; btn.textContent='copied'; setTimeout(()=>btn.textContent=o,1200); }
+
+function updateProgress(){
+  let total=0, done=0;
+  STAGES.forEach(s=>{ total+=s.tasks.length; done += (state[s.id].tasks||[]).filter(Boolean).length; });
+  const pct = total? Math.round(done/total*100):0;
+  document.getElementById('progFill').style.width=pct+'%';
+  document.getElementById('progPct').textContent=pct+'%';
+  STAGES.forEach(s=>{
+    const dot=document.getElementById('dot-'+s.id);
+    if(!dot) return;
+    dot.classList.toggle('done', stageDone(s));
+  });
+}
+
+function toggleTheme(){
+  const b=document.body;
+  const isDark = b.getAttribute('data-theme')==='dark';
+  b.setAttribute('data-theme', isDark?'light':'dark');
+  document.getElementById('themeBtn').textContent = isDark?'Dark':'Light';
+  localStorage.setItem('wf_theme', isDark?'light':'dark');
+}
+
+function typeTerminal(){
+  const lines = [
+    {p:"$ ", t:"whoami --project"},
+    {o:"react-python-portfolio · stage: planning → build → ship"},
+    {p:"$ ", t:"stack --show"},
+    {o:"frontend: React (Vite)  ·  backend: FastAPI  ·  db: SQLite"},
+  ];
+  const el = document.getElementById('termBody');
+  el.innerHTML='';
+  let i=0;
+  function next(){
+    if(i>=lines.length) return;
+    const l = lines[i];
+    const line=document.createElement('div');
+    if(l.p!==undefined){ line.innerHTML = `<span class="prompt">${l.p}</span>${l.t}`; }
+    else { line.innerHTML = `<span class="out">${l.o}</span>`; }
+    el.appendChild(line);
+    i++;
+    setTimeout(next, 380);
+  }
+  next();
+}
+
+function buildDecisionTree(){
+  const el = document.getElementById('decisionTree');
+  const qs = {
+    start: {q:"Do you need async support for heavy I/O (e.g. many external API calls)?", a:{Yes:"fastapi", No:"flask"}},
+  };
+  el.innerHTML = `
+    <div style="font-family:var(--mono);font-size:13px;margin-bottom:10px;color:var(--muted);">Do you need async support for heavy I/O (e.g. many external API calls)?</div>
+    <div><span class="tnode" onclick="pickTree(this,'fastapi')">Yes</span><span class="tnode" onclick="pickTree(this,'flask')">No</span></div>
+    <div class="tans" id="tans-fastapi">→ <b>FastAPI</b> — native async, automatic OpenAPI docs, Pydantic validation. The strong default for a modern React-paired portfolio backend.</div>
+    <div class="tans" id="tans-flask">→ <b>Flask</b> is fine too, but for a portfolio piece, FastAPI's auto-generated docs and typing still tend to save time even without heavy async needs — worth trying first unless you have a strong Flask preference.</div>
+  `;
+}
+function pickTree(node, key){
+  document.querySelectorAll('.tnode').forEach(n=>n.classList.remove('picked'));
+  node.classList.add('picked');
+  document.querySelectorAll('.tans').forEach(n=>n.classList.remove('show'));
+  document.getElementById('tans-'+key).classList.add('show');
+}
+
+// init
+(function(){
+  const savedTheme = localStorage.getItem('wf_theme')||'dark';
+  document.body.setAttribute('data-theme', savedTheme);
+  document.getElementById('themeBtn').textContent = savedTheme==='dark' ? 'Light' : 'Dark';
+  buildPipeline();
+  renderStages();
+  buildDecisionTree();
+  typeTerminal();
+})();
+</script>
+</body>
+</html>
