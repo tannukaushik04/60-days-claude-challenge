@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>LinkedIn Profile Audit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Georgia&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root{
+    --paper:#FAF9F4;
+    --navy:#1B2A4A;
+    --ink:#3A3D42;
+    --red:#B23A2E;
+    --gold:#A9832F;
+    --line:#D8D3C5;
+    --green:#2E6B4F;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:Georgia, 'Times New Roman', serif;
+    line-height:1.6;
+  }
+
+  .wrap{max-width:900px;margin:0 auto;padding:2.5rem 2rem 5rem;}
+
+  .masthead{
+    border-bottom:3px double var(--navy);
+    padding-bottom:1rem;
+    margin-bottom:1.5rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+  }
+  .masthead h1{
+    font-family:'Playfair Display', serif;
+    font-size:2rem;
+    margin:0;
+    color:var(--navy);
+    letter-spacing:0.5px;
+  }
+  .masthead .sub{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.75rem;
+    color:var(--ink);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .stamp{
+    font-family:'JetBrains Mono', monospace;
+    border:3px solid var(--red);
+    color:var(--red);
+    font-weight:700;
+    padding:6px 14px;
+    transform:rotate(-6deg);
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+
+  .tabs{
+    display:flex;
+    gap:2px;
+    margin-bottom:0;
+    flex-wrap:wrap;
+  }
+  .tab{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:10px 16px;
+    background:#EFEBDD;
+    border:1px solid var(--line);
+    border-bottom:none;
+    cursor:pointer;
+    color:var(--ink);
+    position:relative;
+    top:1px;
+  }
+  .tab.active{
+    background:var(--paper);
+    border-bottom:1px solid var(--paper);
+    color:var(--navy);
+    font-weight:600;
+  }
+  .panel-holder{
+    border:1px solid var(--line);
+    padding:2rem;
+    background:var(--paper);
+  }
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  h2.section{
+    font-family:'Playfair Display', serif;
+    color:var(--navy);
+    font-size:1.4rem;
+    margin:0 0 1.2rem;
+    border-bottom:1px solid var(--line);
+    padding-bottom:0.5rem;
+  }
+  h3.card-title{
+    font-family:'Playfair Display', serif;
+    font-size:1.05rem;
+    color:var(--navy);
+    margin:0 0 0.4rem;
+  }
+
+  .card{
+    border:1px solid var(--line);
+    padding:1.2rem 1.4rem;
+    margin-bottom:1.2rem;
+    background:#fff;
+  }
+  .score-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:0.6rem;
+  }
+  .score{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:600;
+    color:var(--red);
+    font-size:1.1rem;
+    border:2px solid var(--red);
+    padding:2px 10px;
+    transform:rotate(-2deg);
+    display:inline-block;
+  }
+  .score.after{color:var(--green);border-color:var(--green);}
+  .reaction{
+    font-style:italic;
+    color:var(--ink);
+    margin:0.4rem 0;
+  }
+  .quote{
+    background:#F3EFE3;
+    border-left:3px solid var(--gold);
+    padding:0.6rem 0.9rem;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85rem;
+    margin:0.6rem 0;
+  }
+  .why, .cost{
+    margin:0.5rem 0;
+    font-size:0.95rem;
+  }
+  .label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--gold);
+    display:block;
+    margin-bottom:2px;
+  }
+
+  .overall-box{
+    text-align:center;
+    padding:1.5rem;
+    border:2px solid var(--navy);
+    margin:1.5rem 0;
+    background:#fff;
+  }
+  .overall-box .num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:2.5rem;
+    color:var(--red);
+    font-weight:600;
+  }
+  .overall-box .num.after{color:var(--green);}
+
+  .rewrite-box{
+    background:#fff;
+    border:1px solid var(--line);
+    padding:1rem 1.2rem;
+    margin-bottom:1rem;
+  }
+  .rewrite-box .opt-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    text-transform:uppercase;
+    color:var(--navy);
+    letter-spacing:1px;
+    margin-bottom:0.3rem;
+    display:block;
+  }
+  .rewrite-box .text{
+    font-family:Georgia, serif;
+    font-size:1rem;
+    color:var(--ink);
+  }
+  .strategy-note{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--gold);
+    margin-top:0.4rem;
+  }
+
+  .before-after{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0.8rem;
+    margin:0.8rem 0 1.2rem;
+  }
+  .before-after .col{
+    padding:0.8rem 1rem;
+    font-size:0.9rem;
+  }
+  .before-after .before{background:#F6E9E7;border-left:3px solid var(--red);}
+  .before-after .after{background:#E9F1EC;border-left:3px solid var(--green);}
+  .before-after .col .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.7rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    display:block;
+    margin-bottom:0.3rem;
+    color:var(--ink);
+  }
+
+  table.scorecard{
+    width:100%;
+    border-collapse:collapse;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85rem;
+  }
+  table.scorecard th, table.scorecard td{
+    border:1px solid var(--line);
+    padding:0.6rem 0.8rem;
+    text-align:left;
+  }
+  table.scorecard th{
+    background:var(--navy);
+    color:var(--paper);
+    text-transform:uppercase;
+    font-size:0.72rem;
+    letter-spacing:0.5px;
+  }
+  table.scorecard td.change{color:var(--green);font-weight:600;}
+
+  .day-block{
+    border:1px solid var(--line);
+    margin-bottom:1rem;
+    background:#fff;
+  }
+  .day-head{
+    background:var(--navy);
+    color:var(--paper);
+    font-family:'JetBrains Mono', monospace;
+    padding:0.6rem 1rem;
+    font-size:0.85rem;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+  }
+  .day-body{
+    padding:1rem 1.2rem;
+    display:none;
+  }
+  .day-body.open{display:block;}
+  .day-body ul{margin:0.4rem 0 0.8rem 1.2rem;padding:0;}
+  .day-body li{margin-bottom:0.4rem;}
+  .post-draft{
+    background:#F3EFE3;
+    border:1px dashed var(--gold);
+    padding:0.9rem 1rem;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.85rem;
+    white-space:pre-wrap;
+    margin:0.6rem 0;
+  }
+
+  .skills-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1.2rem;
+  }
+  .skill-pill{
+    display:inline-block;
+    background:#EFEBDD;
+    border:1px solid var(--line);
+    padding:3px 10px;
+    margin:2px 4px 2px 0;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+  }
+  .skill-pill.add{border-color:var(--green);color:var(--green);}
+  .skill-pill.remove{border-color:var(--red);color:var(--red);text-decoration:line-through;}
+  .skill-pill.pin{border-color:var(--gold);color:var(--gold);font-weight:600;}
+
+  .summary-card{
+    background:#fff;
+    border:2px solid var(--navy);
+    padding:1.8rem;
+    font-family:Georgia, serif;
+    max-width:640px;
+    margin:0 auto;
+  }
+  .summary-card h3{
+    font-family:'Playfair Display', serif;
+    color:var(--navy);
+    margin-top:0;
+  }
+  .summary-scores{
+    display:flex;
+    justify-content:center;
+    gap:2rem;
+    margin:1rem 0;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .summary-scores .before{color:var(--red);}
+  .summary-scores .after{color:var(--green);}
+  .summary-scores .big{font-size:1.8rem;font-weight:600;}
+
+  .btn{
+    font-family:'JetBrains Mono', monospace;
+    background:var(--navy);
+    color:var(--paper);
+    border:none;
+    padding:8px 16px;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    margin-top:1rem;
+  }
+  .btn:hover{background:var(--red);}
+
+  @media (max-width:640px){
+    .before-after, .skills-grid{grid-template-columns:1fr;}
+    .masthead{flex-direction:column;align-items:flex-start;gap:0.6rem;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>The profile audit</h1>
+      <div class="sub">Case file — LinkedIn, Data Science &amp; AI track</div>
+    </div>
+    <div class="stamp">Reviewed</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="roast">Part 1 · Roast</div>
+    <div class="tab" data-tab="rebuild">Part 2 · Rebuild</div>
+    <div class="tab" data-tab="scorecard">Part 3 · Scorecard</div>
+    <div class="tab" data-tab="plan">Part 4 · 7-day plan</div>
+    <div class="tab" data-tab="summary">Part 5 · Summary card</div>
+  </div>
+
+  <div class="panel-holder">
+
+    <!-- PART 1 ROAST -->
+    <div class="panel active" id="roast">
+      <h2 class="section">Profile report card — before</h2>
+
+      <div class="card">
+        <div class="score-row">
+          <h3 class="card-title">Headline</h3>
+          <span class="score">3/10</span>
+        </div>
+        <p class="reaction">Recruiter's 3-second read: "another student who listed every buzzword they could fit."</p>
+        <div class="quote">"Data Science &amp; AI Enthusiast | Artificial intelligence | Machine Learning | Data Analytics | Software Developer | NPTEL Certified"</div>
+        <p class="why"><span class="label">Why it hurts</span>You've listed AI, Machine Learning, and Data Analytics as if they're three different things — to a recruiter they read as one repeated keyword, not three skills. "Enthusiast" signals hobbyist, not builder. Cramming in "Software Developer" too tells recruiters you don't know what role you're going for, so they can't tell if you fit their req.</p>
+        <p class="cost"><span class="label">Invisible cost</span>LinkedIn search ranks headlines by relevance to a specific role. A headline that tries to match everything matches nothing well — you're likely buried below candidates with one sharp, specific headline.</p>
+      </div>
+
+      <div class="card">
+        <div class="score-row">
+          <h3 class="card-title">About — first 2 lines (pre "see more")</h3>
+          <span class="score">2/10</span>
+        </div>
+        <p class="reaction">This is the only part of your About that shows without a click. Recruiter's read: "generic student intro, next profile."</p>
+        <div class="quote">"I am a passionate and motivated Computer Science student with a strong interest in Data Science, Artificial Intelligence, and Python development."</div>
+        <p class="why"><span class="label">Why it hurts</span>"Passionate and motivated" is the single most common opening phrase on LinkedIn — recruiters mentally skip it. It says how you feel about the field, not what you've built or can do. There's no hook, no reason to click "see more."</p>
+        <p class="cost"><span class="label">Invisible cost</span>Most recruiters decide whether to keep reading within these two lines. If they don't click "see more," they never see your projects, your skills, or your NPTEL cert — the entire rest of your profile might as well not exist.</p>
+      </div>
+
+      <div class="card">
+        <div class="score-row">
+          <h3 class="card-title">About — full section</h3>
+          <span class="score">3/10</span>
+        </div>
+        <p class="reaction">"Sounds like every other CS student's About section — nothing here differentiates them."</p>
+        <p class="why"><span class="label">Why it hurts</span>The whole section is intent, not evidence — "I enjoy learning," "continuously exploring," "grow as a future professional." No project is named, no result is quantified, and there's no call to action telling a reader what to do next (message you? check your projects?).</p>
+        <p class="cost"><span class="label">Invisible cost</span>You have two real, working full-stack projects. A recruiter reading your About has no idea they exist — you're hiding your strongest proof behind vague aspiration language.</p>
+      </div>
+
+      <div class="card">
+        <div class="score-row">
+          <h3 class="card-title">Experience</h3>
+          <span class="score">0/10</span>
+        </div>
+        <p class="reaction">"No experience section at all — is this profile even active?"</p>
+        <p class="why"><span class="label">Why it hurts</span>You don't have formal work experience yet, which is normal for a student — but LinkedIn's Experience section isn't only for jobs. You can (and should) list projects there with dates, description, and tech stack. Right now that section is empty, so the profile reads as unfinished.</p>
+        <p class="cost"><span class="label">Invisible cost</span>Recruiters searching by tech stack (Flask, MySQL, Python) will never find you, because that content isn't sitting anywhere it gets indexed. HerHealth AI and your Cafe Management System are currently invisible to search.</p>
+      </div>
+
+      <div class="card">
+        <div class="score-row">
+          <h3 class="card-title">Skills &amp; keywords</h3>
+          <span class="score">4/10</span>
+        </div>
+        <p class="reaction">"Fine, but thin — this profile won't surface for half the searches a recruiter runs in this space."</p>
+        <div class="quote">HTML, CSS, JS, Python, Machine Learning, AI, Data Science, Data Structures</div>
+        <p class="why"><span class="label">Why it hurts</span>You've actually used Flask, MySQL, and built AI chatbot integrations and report-generation pipelines — none of that is reflected in your Skills list. "Data Structures" is a coursework topic, not a hireable skill keyword; it dilutes the list rather than strengthening it.</p>
+        <p class="cost"><span class="label">Invisible cost</span>LinkedIn's recruiter search is largely skill-keyword driven. Every real skill you don't list is a search query you don't show up in — including searches for exactly the tools you actually know.</p>
+      </div>
+
+      <div class="overall-box">
+        <div class="label">Overall profile strength</div>
+        <div class="num">24<span style="font-size:1.2rem;">/100</span></div>
+      </div>
+    </div>
+
+    <!-- PART 2 REBUILD -->
+    <div class="panel" id="rebuild">
+      <h2 class="section">Headline — 3 options</h2>
+      <p style="font-size:0.9rem;color:var(--ink);margin-top:-0.6rem;">Formula: [Role/Identity] | [Who I help or what I do] | [Proof or differentiator]</p>
+
+      <div class="rewrite-box">
+        <span class="opt-label">Option 1 · Keyword-optimized (for recruiter search)</span>
+        <div class="text">Computer Science student | Data Science &amp; AI | Python, Flask, SQL | Building AI-powered healthcare &amp; business apps</div>
+        <div class="strategy-note">Use this if your main goal is showing up in recruiter searches — it front-loads the exact tools recruiters filter by.</div>
+      </div>
+      <div class="rewrite-box">
+        <span class="opt-label">Option 2 · Value-proposition (for hiring managers who scan fast)</span>
+        <div class="text">I build AI-powered apps that solve real problems | Data Science &amp; Python developer | Open to full-time roles</div>
+        <div class="strategy-note">Use this on your homepage/DMs stage — it states outcome over title, which reads stronger to a hiring manager scrolling fast.</div>
+      </div>
+      <div class="rewrite-box">
+        <span class="opt-label">Option 3 · Authority style (for network growth &amp; visibility)</span>
+        <div class="text">Aspiring Data Scientist | Turning data into health &amp; business insights | Python · ML · Flask | NPTEL Certified</div>
+        <div class="strategy-note">Use this if you're posting content and want to be seen as building a track record, not just job-hunting.</div>
+      </div>
+      <p style="font-size:0.9rem;">Since your goal is both landing a job and growing your network, start with <strong>Option 1</strong> now (search visibility matters most while applying), and switch to Option 3 once you start posting regularly.</p>
+
+      <h2 class="section">About section — rewrite</h2>
+      <div class="rewrite-box">
+        <span class="opt-label">The hook (before "see more")</span>
+        <div class="text">Most student projects stop at a working demo. Mine ship as full platforms people could actually use.</div>
+        <div class="strategy-note">Why: replaces a feelings-statement with a specific claim that earns a click.</div>
+      </div>
+      <div class="rewrite-box">
+        <span class="opt-label">The story</span>
+        <div class="text">I'm a Computer Science student focused on Data Science and AI, and I learn by building — not just studying theory. I work end-to-end: designing the database, writing the backend logic in Flask, and wiring up the AI layer that makes the app actually useful, not just functional.</div>
+        <div class="strategy-note">Why: "human language, not corporate speak" — this explains what you do day-to-day, in plain terms a recruiter can picture.</div>
+      </div>
+      <div class="rewrite-box">
+        <span class="opt-label">Proof</span>
+        <div class="text">Two projects show this in practice: HerHealth AI, a full-stack women's health platform with an integrated AI chatbot and automated health-report generation — and a Cafe Management System that unifies menu, orders, billing, and staff management into one tool. Both are built on Python, Flask, and MySQL. I'm also NPTEL certified in the space.</div>
+        <div class="strategy-note">Why: names the actual proof that was buried before — recruiters now see evidence, not adjectives.</div>
+      </div>
+      <div class="rewrite-box">
+        <span class="opt-label">CTA</span>
+        <div class="text">Open to data science, AI, and Python development roles — message me, or check the Featured section below for a closer look at both projects.</div>
+        <div class="strategy-note">Why: tells the reader exactly what to do next instead of leaving the About section as a dead end.</div>
+      </div>
+      <p style="font-size:0.85rem;"><span class="label" style="display:inline;">Keywords embedded</span> — Data Science, AI, Python, Flask, MySQL, full-stack, AI chatbot, healthcare platform, NPTEL certified.</p>
+
+      <h2 class="section">Experience / featured projects — rewrite</h2>
+      <h3 class="card-title">HerHealth AI System</h3>
+      <div class="before-after">
+        <div class="col before"><span class="tag">Before</span>Developed an AI-powered women's healthcare management platform to track menstrual cycles, symptoms, mood, lifestyle, and medical history.</div>
+        <div class="col after"><span class="tag">After</span>Built and shipped HerHealth AI, a full-stack healthcare platform (Python, Flask, MySQL) that lets women track menstrual cycles, symptoms, and mood in one structured system — replacing scattered notes and memory.</div>
+      </div>
+      <div class="before-after">
+        <div class="col before"><span class="tag">Before</span>Integrated an AI chatbot, healthcare analytics, and automated PDF report generation to deliver personalized health insights.</div>
+        <div class="col after"><span class="tag">After</span>Engineered an AI chatbot and automated PDF-reporting pipeline that turns raw health data into a personalized insight report — no manual analysis required.</div>
+      </div>
+
+      <h3 class="card-title">Cafe Management System</h3>
+      <div class="before-after">
+        <div class="col before"><span class="tag">Before</span>Designed and developed a unified platform to manage menu items, order processing, billing, staff details, and customer feedback collection.</div>
+        <div class="col after"><span class="tag">After</span>Designed a unified Cafe Management System (Flask, MySQL) that consolidates menu, orders, billing, staff records, and customer feedback into one dashboard — replacing five separate manual processes with a single tool.</div>
+      </div>
+      <p style="font-size:0.85rem;color:var(--gold);">Add both of these to LinkedIn's Experience/Projects section (not just About) with start/end dates — that's what makes them searchable by tech stack.</p>
+
+      <h2 class="section">Skills recommendations</h2>
+      <div class="skills-grid">
+        <div>
+          <span class="label">Add (priority order)</span>
+          <span class="skill-pill add">1. SQL</span>
+          <span class="skill-pill add">2. Flask</span>
+          <span class="skill-pill add">3. Pandas</span>
+          <span class="skill-pill add">4. NumPy</span>
+          <span class="skill-pill add">5. Data visualization</span>
+          <span class="skill-pill add">6. REST APIs</span>
+          <span class="skill-pill add">7. Git &amp; GitHub</span>
+          <span class="skill-pill add">8. Deep learning</span>
+          <span class="skill-pill add">9. NLP</span>
+          <span class="skill-pill add">10. Power BI</span>
+        </div>
+        <div>
+          <span class="label">Remove</span>
+          <span class="skill-pill remove">Data Structures</span>
+          <p style="font-size:0.82rem;">It's a coursework topic, not a hireable skill keyword — it dilutes your list without earning any search relevance.</p>
+          <span class="label" style="margin-top:0.8rem;">Pin to top 3</span>
+          <span class="skill-pill pin">Python</span>
+          <span class="skill-pill pin">Machine Learning</span>
+          <span class="skill-pill pin">Flask</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PART 3 SCORECARD -->
+    <div class="panel" id="scorecard">
+      <h2 class="section">Before vs after</h2>
+      <table class="scorecard">
+        <tr><th>Section</th><th>Before</th><th>After</th><th>Change</th></tr>
+        <tr><td>Headline</td><td>3/10</td><td>8/10</td><td class="change">+5</td></tr>
+        <tr><td>About (hook)</td><td>2/10</td><td>8/10</td><td class="change">+6</td></tr>
+        <tr><td>About (full)</td><td>3/10</td><td>8/10</td><td class="change">+5</td></tr>
+        <tr><td>Experience / projects</td><td>0/10</td><td>8/10</td><td class="change">+8</td></tr>
+        <tr><td>Skills / keywords</td><td>4/10</td><td>8/10</td><td class="change">+4</td></tr>
+      </table>
+      <div class="overall-box">
+        <div class="label">Overall profile strength</div>
+        <div class="num">24<span style="font-size:1.2rem;">/100</span></div>
+        <div style="font-family:'JetBrains Mono', monospace;font-size:0.9rem;margin:0.4rem 0;">↓</div>
+        <div class="num after">80<span style="font-size:1.2rem;">/100</span></div>
+        <div style="font-family:'JetBrains Mono', monospace;font-size:0.85rem;color:var(--green);margin-top:0.4rem;">+56 points</div>
+      </div>
+    </div>
+
+    <!-- PART 4 PLAN -->
+    <div class="panel" id="plan">
+      <h2 class="section">7-day LinkedIn activation plan</h2>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d1">Day 1 — make all profile changes <span>+</span></div>
+        <div class="day-body" id="d1">
+          <ul>
+            <li>Swap headline to Option 1 (keyword-optimized)</li>
+            <li>Replace About section with the rewritten hook + story + proof + CTA</li>
+            <li>Add both projects to the Experience section with dates and the rewritten bullets</li>
+            <li>Update Skills: add the 10 new keywords, remove "Data Structures," pin Python / Machine Learning / Flask</li>
+            <li>Upload both project links or screenshots to Featured</li>
+            <li>Turn on "Open to Work" (recruiters only, if you'd rather it stay private)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d2">Day 2 — publish post #1 <span>+</span></div>
+        <div class="day-body" id="d2">
+          <p>Post title: "I just rebuilt my LinkedIn profile"</p>
+          <div class="post-draft">I just rebuilt my LinkedIn profile from scratch — and it made me realize how much of it was empty adjectives instead of actual proof.
+
+Before: "passionate CS student interested in Data Science and AI."
+After: two real projects, listed with the tech stack and what they actually do.
+
+One of them, HerHealth AI, tracks menstrual health and generates personalized reports using an integrated AI chatbot. The other, a Cafe Management System, runs orders, billing, and staff management in one dashboard.
+
+Lesson: recruiters don't hire enthusiasm. They hire evidence.
+
+Open to Data Science / AI / Python roles — always happy to connect with people building in this space.</div>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d3">Day 3 — send 10 strategic connection requests <span>+</span></div>
+        <div class="day-body" id="d3">
+          <p><span class="label">Who to target</span></p>
+          <ul>
+            <li>Recruiters at 3-5 companies you'd actually want to work at (search "technical recruiter" + company name)</li>
+            <li>Data scientists / ML engineers 1-3 years ahead of you — they remember the junior search and often reply</li>
+            <li>Alumni from your college now working in Data Science or AI roles</li>
+          </ul>
+          <p><span class="label">Connection message template</span></p>
+          <div class="post-draft">Hi [Name], I'm a CS student building AI/data projects (like an AI-powered healthcare platform). Would love to connect and follow your work in [their field].</div>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d4">Day 4 — comment on 5 posts in your target space <span>+</span></div>
+        <div class="day-body" id="d4">
+          <p><span class="label">The value comment formula</span></p>
+          <ul>
+            <li><strong>Agree</strong> — one line showing you actually read the post</li>
+            <li><strong>Add insight</strong> — one specific thing from your own experience or project that relates</li>
+            <li><strong>Ask a question</strong> — keeps the conversation open and often gets a reply from the original poster</li>
+          </ul>
+          <p style="font-size:0.85rem;">Example: "Agree that model accuracy alone is misleading — I ran into this building a health-report generator, where a technically 'accurate' report still felt useless to the user. Curious how you'd measure real-world usefulness instead of just accuracy?"</p>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d5">Day 5 — publish post #2 <span>+</span></div>
+        <div class="day-body" id="d5">
+          <p>Post title: a lesson from building HerHealth AI</p>
+          <div class="post-draft">Building an AI chatbot into HerHealth AI taught me something no course did: the hard part isn't the model, it's making the output useful.
+
+Anyone can call an API and get a response. Turning that response into a personalized, readable health report someone will actually trust — that took more iteration than the AI integration itself.
+
+Hot take: for most student AI projects, the "AI" part is 20% of the actual work. The other 80% is UX, data structure, and knowing what the user actually needs to see.
+
+What's the most underrated part of your projects that nobody asks about?</div>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d6">Day 6 — engage + send 5 more requests <span>+</span></div>
+        <div class="day-body" id="d6">
+          <ul>
+            <li>Reply to every comment on both posts within a few hours — replies drive LinkedIn's algorithm more than the post itself</li>
+            <li>Send 5 more connection requests using the same template from Day 3, targeting a different company or niche this time</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="day-block">
+        <div class="day-head" data-day="d7">Day 7 — review the numbers <span>+</span></div>
+        <div class="day-body" id="d7">
+          <p><span class="label">What to check</span></p>
+          <ul>
+            <li>Profile views — a jump here means your headline/photo are earning clicks from search or posts</li>
+            <li>Connection acceptance rate — under 30% usually means your message or target audience needs adjusting, not more volume</li>
+            <li>Post impressions and comments — comments matter more than likes; they're what the algorithm rewards</li>
+          </ul>
+          <p style="font-size:0.85rem;">If views are up but acceptance is low, tighten your connection message to be more specific to each person. If both are flat, the issue is usually the headline, not the outreach.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PART 5 SUMMARY -->
+    <div class="panel" id="summary">
+      <h2 class="section">Shareable summary card</h2>
+      <div class="summary-card">
+        <h3>I let AI roast my LinkedIn profile today. Here's what changed:</h3>
+        <div class="summary-scores">
+          <div><div class="big before">24</div><div class="label">Before</div></div>
+          <div><div class="big after">80</div><div class="label">After</div></div>
+        </div>
+        <p><strong>Top 3 mistakes I was making:</strong></p>
+        <ol>
+          <li>My headline listed every buzzword instead of one clear identity</li>
+          <li>My About section was all feelings, zero proof — no projects, no numbers</li>
+          <li>My real projects weren't in my Experience section at all, so they were invisible to recruiter search</li>
+        </ol>
+        <p><strong>The #1 thing that made the biggest difference:</strong> moving my actual projects — HerHealth AI and my Cafe Management System — out of "someday I'll mention this" and into the Experience section with real tech-stack keywords.</p>
+      </div>
+      <button class="btn" onclick="window.print()">Print / save as image</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  document.querySelectorAll('.day-head').forEach(head => {
+    head.addEventListener('click', () => {
+      const body = document.getElementById(head.dataset.day);
+      body.classList.toggle('open');
+    });
+  });
+  document.getElementById('d1').classList.add('open');
+</script>
+
+</body>
+</html>
