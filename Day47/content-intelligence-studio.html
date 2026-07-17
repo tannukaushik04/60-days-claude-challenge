@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Intelligence Studio</title>
+<style>
+  :root{
+    --ink:#0d1117;
+    --surface:#141b28;
+    --surface-2:#1b2333;
+    --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.16);
+    --text:#e8ecf3;
+    --text-dim:#8b95a7;
+    --text-faint:#5b6577;
+    --gold:#e8b84b;
+    --gold-dim: rgba(232,184,75,0.15);
+    --teal:#4fd1c5;
+    --teal-dim: rgba(79,209,197,0.15);
+    --rose:#e8735c;
+    --rose-dim: rgba(232,115,92,0.15);
+    --radius: 14px;
+    --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, ui-serif, serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+  }
+  html.light{
+    --ink:#f3f1ea;
+    --surface:#ffffff;
+    --surface-2:#f6f4ee;
+    --line: rgba(20,20,20,0.09);
+    --line-strong: rgba(20,20,20,0.18);
+    --text:#181a1f;
+    --text-dim:#5a5f6b;
+    --text-faint:#8b90a0;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+    transition:background .4s ease, color .4s ease;
+    min-height:100vh;
+  }
+  ::selection{ background:var(--gold-dim); }
+  a{color:var(--teal);}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px 120px;}
+  /* header */
+  header.top{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--ink) 78%, transparent);
+    border-bottom:1px solid var(--line);
+  }
+  .top-inner{
+    max-width:1180px;margin:0 auto;padding:16px 28px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand .mark{
+    font-family:var(--serif); font-size:22px; font-weight:700; letter-spacing:-0.01em;
+  }
+  .brand .mark em{ color:var(--gold); font-style:normal;}
+  .brand .tag{font-size:11px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; font-family:var(--mono);}
+  .top-actions{display:flex; align-items:center; gap:14px;}
+  .chip{
+    font-family:var(--mono); font-size:11px; letter-spacing:.04em; color:var(--text-dim);
+    border:1px solid var(--line); padding:5px 10px; border-radius:99px;
+  }
+  .toggle-btn{
+    background:var(--surface-2); border:1px solid var(--line); color:var(--text);
+    width:36px;height:36px;border-radius:99px; cursor:pointer; font-size:15px;
+    display:flex;align-items:center;justify-content:center;
+    transition: transform .2s ease, border-color .2s ease;
+  }
+  .toggle-btn:hover{ border-color:var(--line-strong); transform: rotate(20deg);}
+
+  /* hero */
+  .hero{ padding:64px 0 40px; }
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--gold);}
+  h1.hero-title{
+    font-family:var(--serif); font-weight:600; font-size:clamp(34px,5vw,54px);
+    line-height:1.08; letter-spacing:-0.01em; margin:0 0 18px; max-width:800px;
+  }
+  h1.hero-title .accent{ color:var(--gold); font-style:italic;}
+  .hero-sub{ font-size:16.5px; color:var(--text-dim); max-width:640px; margin:0 0 6px;}
+  .brief-line{
+    margin-top:22px; display:flex; flex-wrap:wrap; gap:8px;
+  }
+  .brief-pill{
+    font-family:var(--mono); font-size:11.5px; color:var(--text-dim);
+    background:var(--surface); border:1px solid var(--line); padding:6px 12px; border-radius:8px;
+  }
+  .brief-pill b{color:var(--text); font-weight:600;}
+
+  /* panel card base */
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px; margin-bottom:22px;
+  }
+  .card h2{
+    font-family:var(--serif); font-size:21px; margin:0 0 4px; font-weight:600;
+  }
+  .card .sub{ color:var(--text-faint); font-size:13px; margin:0 0 20px;}
+
+  /* upload zone */
+  .grid-2{ display:grid; grid-template-columns: 1.2fr .9fr; gap:20px;}
+  @media (max-width:820px){ .grid-2{grid-template-columns:1fr;} }
+  label.field-label{
+    display:block; font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-faint); margin-bottom:8px;
+  }
+  textarea{
+    width:100%; min-height:150px; resize:vertical;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    color:var(--text); font-family:var(--sans); font-size:14.5px; padding:14px;
+    outline:none; transition:border-color .2s ease;
+  }
+  textarea:focus{ border-color:var(--teal); }
+  .dropzone{
+    border:1.5px dashed var(--line-strong); border-radius:10px; padding:22px;
+    text-align:center; cursor:pointer; color:var(--text-dim); font-size:13.5px;
+    display:flex; flex-direction:column; align-items:center; gap:8px; justify-content:center;
+    min-height:150px; transition: all .2s ease; position:relative; overflow:hidden;
+  }
+  .dropzone:hover{ border-color:var(--gold); color:var(--text); }
+  .dropzone.has-image{ border-style:solid; padding:0;}
+  .dropzone img{ max-width:100%; max-height:220px; object-fit:contain; display:block; margin:0 auto;}
+  .dz-icon{ font-size:26px; opacity:.6;}
+  input[type=file]{ display:none;}
+  .remove-img{
+    position:absolute; top:8px; right:8px; background:rgba(0,0,0,.55); color:#fff;
+    border:none; width:26px;height:26px;border-radius:99px; cursor:pointer; font-size:13px;
+  }
+
+  select.field-select{
+    width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    color:var(--text); font-size:13.5px; padding:11px 12px; font-family:var(--sans); outline:none;
+  }
+  .field-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px;}
+  @media (max-width:700px){ .field-row{grid-template-columns:1fr;} }
+
+  .run-row{ display:flex; align-items:center; gap:16px; margin-top:24px; flex-wrap:wrap;}
+  .btn-primary{
+    background:linear-gradient(135deg, var(--gold), #d69f2e); color:#161200; border:none;
+    font-weight:700; font-size:14.5px; padding:14px 26px; border-radius:10px; cursor:pointer;
+    letter-spacing:.01em; transition: transform .15s ease, box-shadow .15s ease; font-family:var(--sans);
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 8px 24px -8px rgba(232,184,75,.5);}
+  .btn-primary:disabled{ opacity:.45; cursor:not-allowed; transform:none; box-shadow:none;}
+  .btn-ghost{
+    background:transparent; border:1px solid var(--line); color:var(--text-dim);
+    font-size:13.5px; padding:12px 18px; border-radius:10px; cursor:pointer; font-family:var(--sans);
+  }
+  .btn-ghost:hover{ border-color:var(--line-strong); color:var(--text);}
+  .err-box{
+    display:none; background:var(--rose-dim); border:1px solid rgba(232,115,92,.4); color:#f2b8ac;
+    padding:12px 14px; border-radius:10px; font-size:13.5px; margin-top:16px;
+  }
+
+  /* review board (signature element) */
+  #board-section{ display:none; }
+  .board-title{ display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+  .board-row{ display:flex; gap:14px; overflow-x:auto; padding-bottom:6px;}
+  .reviewer-card{
+    min-width:190px; flex:1 0 190px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:12px; padding:16px; position:relative; transition:border-color .3s ease;
+  }
+  .reviewer-card.active{ border-color:var(--gold); }
+  .reviewer-card.done{ border-color:var(--teal); }
+  .rc-top{ display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .rc-avatar{
+    width:34px;height:34px;border-radius:99px; background:var(--surface); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-weight:700; font-size:14px;
+  }
+  .rc-role{ font-size:13.5px; font-weight:600; }
+  .rc-focus{ font-size:11.5px; color:var(--text-faint); line-height:1.4; min-height:30px;}
+  .rc-status{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    display:flex; align-items:center; gap:6px; margin-top:10px; color:var(--text-faint);
+  }
+  .dot{width:7px;height:7px;border-radius:99px; background:var(--text-faint); flex:none;}
+  .dot.queued{ background:var(--text-faint);}
+  .dot.active{ background:var(--gold); animation:pulse 1s infinite;}
+  .dot.done{ background:var(--teal);}
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  .log-box{
+    margin-top:18px; background:var(--ink); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; font-family:var(--mono); font-size:12px; color:var(--text-dim);
+    max-height:170px; overflow-y:auto;
+  }
+  .log-line{ margin-bottom:5px; opacity:0; animation: fadeIn .4s ease forwards;}
+  .log-line .t{ color:var(--text-faint); margin-right:8px;}
+  @keyframes fadeIn{ to{opacity:1;} }
+
+  /* results */
+  #results-section{ display:none; }
+  .score-hero{
+    display:flex; align-items:center; gap:32px; flex-wrap:wrap;
+  }
+  .score-ring{ position:relative; width:132px; height:132px; flex:none;}
+  .score-ring svg{ transform:rotate(-90deg); width:100%; height:100%;}
+  .score-ring .bg{ fill:none; stroke:var(--line); stroke-width:9;}
+  .score-ring .fg{ fill:none; stroke:var(--gold); stroke-width:9; stroke-linecap:round;
+    transition: stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1); }
+  .score-num{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  .score-num .n{ font-family:var(--serif); font-size:34px; font-weight:700;}
+  .score-num .lab{ font-family:var(--mono); font-size:9.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.08em;}
+  .exec-summary{ flex:1; min-width:280px; font-size:15px; color:var(--text-dim); line-height:1.65;}
+  .exec-summary strong{color:var(--text);}
+
+  .cat-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-top:22px;}
+  .cat-card{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:16px;}
+  .cat-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .cat-name{ font-weight:600; font-size:13.5px;}
+  .cat-score{ font-family:var(--serif); font-weight:700; font-size:19px; color:var(--gold);}
+  .cat-bar{ height:5px; background:var(--line); border-radius:99px; overflow:hidden; margin-bottom:10px;}
+  .cat-bar-fill{ height:100%; background:var(--gold); border-radius:99px; transition:width 1s ease; width:0%;}
+  .cat-text{ font-size:12.5px; color:var(--text-dim); line-height:1.5;}
+
+  .tab-nav{ display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--line); margin-bottom:20px; padding-bottom:0;}
+  .tab-btn{
+    background:none; border:none; color:var(--text-faint); font-size:13.5px; padding:10px 16px;
+    cursor:pointer; font-family:var(--sans); border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition: color .2s ease;
+  }
+  .tab-btn:hover{ color:var(--text);}
+  .tab-btn.active{ color:var(--gold); border-bottom-color:var(--gold); font-weight:600;}
+  .tab-panel{ display:none; animation: fadeIn .35s ease;}
+  .tab-panel.active{ display:block;}
+
+  .swot-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:700px){ .swot-grid{grid-template-columns:1fr;} }
+  .swot-box{ border-radius:10px; padding:16px; border:1px solid var(--line);}
+  .swot-box h3{ margin:0 0 10px; font-size:13px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em;}
+  .swot-box.strengths{ background:var(--teal-dim); }
+  .swot-box.strengths h3{ color:var(--teal);}
+  .swot-box.weaknesses{ background:var(--rose-dim);}
+  .swot-box.weaknesses h3{ color:var(--rose);}
+  .swot-box.opportunities{ background:var(--gold-dim);}
+  .swot-box.opportunities h3{ color:var(--gold);}
+  .swot-box ul{ margin:0; padding-left:18px; font-size:13.5px; color:var(--text-dim); line-height:1.6;}
+
+  .rewrite-compare{ display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:760px){ .rewrite-compare{grid-template-columns:1fr;} }
+  .rw-col{ background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:18px;}
+  .rw-col h4{ margin:0 0 12px; font-size:12px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint);}
+  .rw-col.after h4{ color:var(--gold);}
+  .rw-body{ font-size:14px; white-space:pre-wrap; line-height:1.65; color:var(--text-dim);}
+  .rw-col.after .rw-body{ color:var(--text);}
+
+  .hook-list{ display:flex; flex-direction:column; gap:10px; margin-top:8px;}
+  .hook-item{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:12px 14px;
+    font-size:14px; display:flex; gap:12px; align-items:flex-start;
+  }
+  .hook-item .idx{ font-family:var(--serif); color:var(--gold); font-weight:700; flex:none;}
+
+  .checklist{ display:flex; flex-direction:column; gap:9px; margin-top:6px;}
+  .checklist label{
+    display:flex; align-items:flex-start; gap:10px; font-size:14px; color:var(--text-dim);
+    cursor:pointer; padding:8px 10px; border-radius:8px; transition:background .15s ease;
+  }
+  .checklist label:hover{ background:var(--surface-2);}
+  .checklist input{ margin-top:3px; accent-color:var(--gold);}
+  .checklist input:checked + span{ color:var(--text-faint); text-decoration:line-through;}
+
+  .perf-est{
+    background: linear-gradient(135deg, var(--gold-dim), transparent);
+    border:1px solid var(--line); border-radius:10px; padding:18px; margin-top:6px;
+  }
+  .perf-est .flag{
+    font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--gold); margin-bottom:8px; display:block;
+  }
+
+  .prompt-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px;}
+  .prompt-chip{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:11px 14px;
+    font-size:13px; font-family:var(--mono); color:var(--text-dim); cursor:pointer; transition:border-color .15s ease;
+  }
+  .prompt-chip:hover{ border-color:var(--teal); color:var(--text);}
+
+  .copy-btn{
+    background:var(--surface); border:1px solid var(--line); color:var(--text-dim); font-size:11.5px;
+    padding:5px 10px; border-radius:7px; cursor:pointer; font-family:var(--mono); margin-top:10px;
+  }
+  .copy-btn:hover{ color:var(--text); border-color:var(--line-strong);}
+
+  footer.site-footer{ text-align:center; color:var(--text-faint); font-size:12px; padding:40px 0 10px;}
+
+  .spinner{
+    width:16px;height:16px; border-radius:99px; border:2px solid rgba(0,0,0,.25); border-top-color:#161200;
+    display:inline-block; animation:spin .7s linear infinite; margin-right:8px; vertical-align:-3px;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  ::-webkit-scrollbar{ height:8px; width:8px;}
+  ::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:99px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <span class="mark">Content <em>Intelligence</em> Studio</span>
+      <span class="tag">/ AI editorial review desk</span>
+    </div>
+    <div class="top-actions">
+      <span class="chip" id="model-chip">claude-sonnet-4-6</span>
+      <button class="toggle-btn" id="theme-toggle" title="Toggle theme">🌙</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow" id="eyebrow-text">LinkedIn · Text + Visual · Reach & Engagement</div>
+    <h1 class="hero-title">Send your post to the <span class="accent">review board</span><br>before it goes live.</h1>
+    <p class="hero-sub">Upload your caption and creative. A panel of specialist AI reviewers — assembled specifically for this post — will score it, argue over it, and rewrite it, live.</p>
+    <div class="brief-line">
+      <span class="brief-pill">Format: <b>Social post + image</b></span>
+      <span class="brief-pill">Platform: <b id="pill-platform">LinkedIn</b></span>
+      <span class="brief-pill">Goal: <b id="pill-goal">Grow reach / engagement</b></span>
+      <span class="brief-pill">Tone: <b id="pill-tone">Balanced professional</b></span>
+    </div>
+  </section>
+
+  <section class="card" id="upload-card">
+    <h2>The submission</h2>
+    <p class="sub">Paste your caption and drop in the visual. Both are analyzed together, the way a reader would experience them.</p>
+    <div class="grid-2">
+      <div>
+        <label class="field-label">Post copy / caption</label>
+        <textarea id="post-text" placeholder="Paste your LinkedIn caption here..."></textarea>
+      </div>
+      <div>
+        <label class="field-label">Visual (image / thumbnail / screenshot)</label>
+        <div class="dropzone" id="dropzone">
+          <div class="dz-icon">🖼️</div>
+          <div>Drag an image here, or click to browse</div>
+          <div style="font-size:11px;color:var(--text-faint)">PNG, JPG, WEBP — analyzed directly by Claude's vision</div>
+          <input type="file" id="file-input" accept="image/*">
+        </div>
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div>
+        <label class="field-label">Platform</label>
+        <select class="field-select" id="sel-platform">
+          <option>LinkedIn</option>
+          <option>Instagram</option>
+          <option>X (Twitter)</option>
+          <option>Facebook</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Primary goal</label>
+        <select class="field-select" id="sel-goal">
+          <option>Grow reach / engagement</option>
+          <option>Establish thought leadership</option>
+          <option>Generate leads / conversions</option>
+          <option>Build community</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label">Review intensity</label>
+        <select class="field-select" id="sel-tone">
+          <option>Supportive coach</option>
+          <option selected>Balanced professional</option>
+          <option>Brutally critical</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="run-row">
+      <button class="btn-primary" id="run-btn">Assemble the review board →</button>
+      <button class="btn-ghost" id="sample-btn">Load a sample post</button>
+      <span style="font-size:12px;color:var(--text-faint)" id="status-hint"></span>
+    </div>
+    <div class="err-box" id="err-box"></div>
+  </section>
+
+  <section class="card" id="board-section">
+    <div class="board-title">
+      <div>
+        <h2>The review board</h2>
+        <p class="sub" style="margin:0" id="board-sub">Reviewers assembled specifically for a LinkedIn image post. Each works in sequence.</p>
+      </div>
+    </div>
+    <div class="board-row" id="board-row"></div>
+    <div class="log-box" id="log-box"></div>
+  </section>
+
+  <section class="card" id="results-section">
+    <h2>Content health report</h2>
+    <p class="sub">Synthesized from every reviewer's independent pass.</p>
+
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 132 132">
+          <circle class="bg" cx="66" cy="66" r="56"></circle>
+          <circle class="fg" id="score-circle" cx="66" cy="66" r="56" stroke-dasharray="352" stroke-dashoffset="352"></circle>
+        </svg>
+        <div class="score-num"><span class="n" id="score-num">–</span><span class="lab">/ 100</span></div>
+      </div>
+      <div class="exec-summary" id="exec-summary">Waiting for review...</div>
+    </div>
+
+    <div class="cat-grid" id="cat-grid"></div>
+
+    <div style="margin-top:32px">
+      <div class="tab-nav" id="tab-nav">
+        <button class="tab-btn active" data-tab="swot">Strengths & gaps</button>
+        <button class="tab-btn" data-tab="rewrite">Before / after</button>
+        <button class="tab-btn" data-tab="hooks">Alternative hooks</button>
+        <button class="tab-btn" data-tab="checklist">Publishing checklist</button>
+        <button class="tab-btn" data-tab="performance">Performance estimate</button>
+        <button class="tab-btn" data-tab="deeper">Go deeper</button>
+      </div>
+
+      <div class="tab-panel active" id="tab-swot">
+        <div class="swot-grid">
+          <div class="swot-box strengths"><h3>Strengths</h3><ul id="list-strengths"></ul></div>
+          <div class="swot-box weaknesses"><h3>Weaknesses</h3><ul id="list-weaknesses"></ul></div>
+          <div class="swot-box opportunities" style="grid-column:1/-1"><h3>Missed opportunities</h3><ul id="list-opportunities"></ul></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-rewrite">
+        <div class="rewrite-compare">
+          <div class="rw-col before"><h4>Original</h4><div class="rw-body" id="original-body"></div></div>
+          <div class="rw-col after"><h4>Rewritten by the board</h4><div class="rw-body" id="rewrite-body"></div>
+            <button class="copy-btn" id="copy-rewrite">Copy rewrite</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-hooks">
+        <p class="sub" style="margin-bottom:14px">Opening lines built to stop the scroll in a LinkedIn feed.</p>
+        <div class="hook-list" id="hook-list"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-checklist">
+        <p class="sub" style="margin-bottom:6px">Work through before you hit publish.</p>
+        <div class="checklist" id="checklist"></div>
+      </div>
+
+      <div class="tab-panel" id="tab-performance">
+        <div class="perf-est">
+          <span class="flag">AI estimate — directional, not a guarantee</span>
+          <div id="perf-body" style="font-size:14.5px; color:var(--text-dim); line-height:1.65;"></div>
+        </div>
+      </div>
+
+      <div class="tab-panel" id="tab-deeper">
+        <p class="sub" style="margin-bottom:6px">Prompts to keep optimizing this post with the board.</p>
+        <div class="prompt-list" id="prompt-list"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="site-footer">Content Intelligence Studio — every score and word above comes from a live Claude review, not a template.</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const API_URL = "https://api.anthropic.com/v1/messages";
+  const MODEL = "claude-sonnet-4-6";
+
+  // ---------- theme ----------
+  const themeBtn = document.getElementById('theme-toggle');
+  themeBtn.addEventListener('click', ()=>{
+    document.documentElement.classList.toggle('light');
+    themeBtn.textContent = document.documentElement.classList.contains('light') ? '☀️' : '🌙';
+  });
+
+  // ---------- state ----------
+  let uploadedImage = null; // {base64, mediaType}
+
+  // ---------- dropzone ----------
+  // Uses event delegation throughout: the file input inside #dropzone gets
+  // replaced (via innerHTML) whenever an image is added/removed, so we never
+  // hold a direct reference to it — we always look it up fresh, and both
+  // 'click' and 'change' listeners live on the stable parent (#dropzone).
+  const dropzone = document.getElementById('dropzone');
+  dropzone.addEventListener('click', (e)=>{
+    if(e.target.closest('.remove-img')) return; // remove button handles itself
+    const input = dropzone.querySelector('input[type=file]');
+    if(input) input.click();
+  });
+  dropzone.addEventListener('change', (e)=>{
+    if(e.target && e.target.matches('input[type=file]') && e.target.files && e.target.files[0]){
+      handleFile(e.target.files[0]);
+    }
+  });
+  dropzone.addEventListener('dragover', e=>{ e.preventDefault(); dropzone.style.borderColor='var(--gold)'; });
+  dropzone.addEventListener('dragleave', ()=>{ dropzone.style.borderColor=''; });
+  dropzone.addEventListener('drop', e=>{
+    e.preventDefault();
+    dropzone.style.borderColor='';
+    if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+
+  function handleFile(file){
+    if(!file.type.startsWith('image/')){ showErr('Please upload an image file.'); return; }
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      const dataUrl = ev.target.result;
+      const base64 = dataUrl.split(',')[1];
+      uploadedImage = { base64, mediaType: file.type };
+      dropzone.classList.add('has-image');
+      dropzone.innerHTML = '<img src="'+dataUrl+'"><button class="remove-img" id="remove-img" title="Remove">✕</button>';
+      dropzone.querySelector('.remove-img').addEventListener('click', (ev2)=>{
+        ev2.stopPropagation();
+        uploadedImage = null;
+        dropzone.classList.remove('has-image');
+        dropzone.innerHTML = '<div class="dz-icon">🖼️</div><div>Drag an image here, or click to browse</div><div style="font-size:11px;color:var(--text-faint)">PNG, JPG, WEBP — analyzed directly by Claude\'s vision</div><input type="file" id="file-input" accept="image/*">';
+      });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ---------- keep hero/board copy in sync with the selected brief ----------
+  const selPlatform = document.getElementById('sel-platform');
+  const selGoal = document.getElementById('sel-goal');
+  const selTone = document.getElementById('sel-tone');
+  function syncBriefCopy(){
+    const platform = selPlatform.value, goal = selGoal.value, tone = selTone.value;
+    document.getElementById('eyebrow-text').textContent = platform + ' · Text + Visual · ' + goal;
+    document.getElementById('pill-platform').textContent = platform;
+    document.getElementById('pill-goal').textContent = goal;
+    document.getElementById('pill-tone').textContent = tone;
+    document.getElementById('board-sub').textContent = 'Reviewers assembled specifically for a ' + platform + ' image post. Each works in sequence.';
+    const hooksSub = document.querySelector('#tab-hooks .sub');
+    if(hooksSub) hooksSub.textContent = 'Opening lines built to stop the scroll in a ' + platform + ' feed.';
+  }
+  [selPlatform, selGoal, selTone].forEach(el=> el.addEventListener('change', syncBriefCopy));
+  syncBriefCopy();
+
+  // ---------- sample ----------
+  document.getElementById('sample-btn').addEventListener('click', ()=>{
+    document.getElementById('post-text').value =
+`I used to think hustle was the answer.
+
+Then I burned out twice in one year and realized: it was never about working harder.
+
+3 things changed everything for me:
+1. Saying no to 80% of meetings
+2. Blocking my calendar like it's client work
+3. Measuring output, not hours
+
+Growth isn't a grind. It's a system.
+
+What's one boundary that changed your work life?`;
+  });
+
+  // ---------- error helper ----------
+  const errBox = document.getElementById('err-box');
+  function showErr(msg){
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+  }
+  function clearErr(){ errBox.style.display='none'; errBox.textContent=''; }
+
+  // ---------- Claude API call with retry ----------
+  async function callClaude(systemPrompt, userContent, maxTokens, retries){
+    retries = retries === undefined ? 2 : retries;
+    const body = {
+      model: MODEL,
+      max_tokens: maxTokens || 1500,
+      system: systemPrompt,
+      messages: [ { role: "user", content: userContent } ]
+    };
+    for(let attempt=0; attempt <= retries; attempt++){
+      try{
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body)
+        });
+        if(!res.ok){
+          const errText = await res.text().catch(()=> "");
+          throw new Error("API error " + res.status + ": " + errText.slice(0,200));
+        }
+        const data = await res.json();
+        const textBlocks = (data.content || []).filter(b=>b.type==='text').map(b=>b.text);
+        const full = textBlocks.join("\n").trim();
+        if(!full) throw new Error("Empty response from model.");
+        return full;
+      }catch(err){
+        if(attempt === retries) throw err;
+        await new Promise(r=>setTimeout(r, 700 * (attempt+1)));
+      }
+    }
+  }
+
+  function buildUserContent(promptText){
+    const content = [];
+    if(uploadedImage){
+      content.push({ type:"image", source:{ type:"base64", media_type: uploadedImage.mediaType, data: uploadedImage.base64 } });
+    }
+    content.push({ type:"text", text: promptText });
+    return content;
+  }
+
+  // ---------- plain-text field parser (no JSON, avoids brace errors) ----------
+  // Model is instructed to format output as:
+  // ### FIELD_NAME ###
+  // content...
+  // ### NEXT_FIELD ###
+  function parseFields(raw){
+    const fields = {};
+    const re = /###\s*([A-Z0-9_]+)\s*###/g;
+    let match;
+    const markers = [];
+    while((match = re.exec(raw)) !== null){
+      markers.push({ name: match[1], index: match.index, end: match.index + match[0].length });
+    }
+    for(let i=0;i<markers.length;i++){
+      const start = markers[i].end;
+      const end = i+1 < markers.length ? markers[i+1].index : raw.length;
+      fields[markers[i].name] = raw.slice(start, end).trim();
+    }
+    return fields;
+  }
+
+  function parseListLines(text){
+    if(!text) return [];
+    return text.split('\n')
+      .map(l=>l.replace(/^[-*•\d.)\s]+/, '').trim())
+      .filter(l=>l.length>0);
+  }
+
+  function escapeHtml(str){
+    return (str||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- log ----------
+  const logBox = document.getElementById('log-box');
+  function log(msg){
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    line.innerHTML = '<span class="t">'+t+'</span>' + escapeHtml(msg);
+    logBox.appendChild(line);
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+
+  // ---------- board rendering ----------
+  const boardRow = document.getElementById('board-row');
+  function renderBoard(reviewers){
+    boardRow.innerHTML = '';
+    reviewers.forEach((r, i)=>{
+      const card = document.createElement('div');
+      card.className = 'reviewer-card';
+      card.id = 'reviewer-'+i;
+      card.innerHTML =
+        '<div class="rc-top"><div class="rc-avatar">'+ (r.name||'R').charAt(0) +'</div>'+
+        '<div><div class="rc-role">'+escapeHtml(r.name||('Reviewer '+(i+1)))+'</div></div></div>'+
+        '<div class="rc-focus">'+escapeHtml(r.focus||'')+'</div>'+
+        '<div class="rc-status"><span class="dot queued" id="dot-'+i+'"></span><span id="status-'+i+'">Queued</span></div>';
+      boardRow.appendChild(card);
+    });
+  }
+  function setReviewerStatus(i, status){
+    const card = document.getElementById('reviewer-'+i);
+    const dot = document.getElementById('dot-'+i);
+    const label = document.getElementById('status-'+i);
+    if(!card) return;
+    card.classList.remove('active','done');
+    dot.classList.remove('queued','active','done');
+    if(status==='active'){ card.classList.add('active'); dot.classList.add('active'); label.textContent='Analyzing...'; }
+    else if(status==='done'){ card.classList.add('done'); dot.classList.add('done'); label.textContent='Complete'; }
+    else { dot.classList.add('queued'); label.textContent='Queued'; }
+  }
+
+  // ---------- main pipeline ----------
+  const runBtn = document.getElementById('run-btn');
+  const statusHint = document.getElementById('status-hint');
+  const boardSection = document.getElementById('board-section');
+  const resultsSection = document.getElementById('results-section');
+
+  runBtn.addEventListener('click', runPipeline);
+
+  async function runPipeline(){
+    clearErr();
+    const postText = document.getElementById('post-text').value.trim();
+    if(!postText && !uploadedImage){
+      showErr('Add your caption text and/or an image before running the review.');
+      return;
+    }
+    const platform = document.getElementById('sel-platform').value;
+    const goal = document.getElementById('sel-goal').value;
+    const tone = document.getElementById('sel-tone').value;
+
+    runBtn.disabled = true;
+    runBtn.innerHTML = '<span class="spinner"></span> Assembling board...';
+    boardSection.style.display = 'block';
+    resultsSection.style.display = 'none';
+    logBox.innerHTML = '';
+    boardRow.innerHTML = '';
+    boardSection.scrollIntoView({behavior:'smooth', block:'start'});
+
+    try{
+      // STAGE 1: plan the reviewer board
+      log('Briefing lead strategist on this post...');
+      statusHint.textContent = 'Designing review workflow...';
+      const planSystem = "You are the managing editor of an elite social media consultancy. Given a post's platform and goal, you design a short review board of 4 specialist reviewers best suited to critique THIS specific post. Pick roles genuinely relevant to the platform, content type (image + caption), and goal — do not always pick the same generic set. Output ONLY in this exact plain-text format, no JSON, no markdown, no extra commentary:\n### REVIEWER_1_NAME ###\n<short professional title>\n### REVIEWER_1_FOCUS ###\n<one sentence on what they specifically evaluate for this post>\n### REVIEWER_2_NAME ###\n...\n### REVIEWER_2_FOCUS ###\n...\n### REVIEWER_3_NAME ###\n...\n### REVIEWER_3_FOCUS ###\n...\n### REVIEWER_4_NAME ###\n...\n### REVIEWER_4_FOCUS ###\n...\nExactly 4 reviewers. Keep each title to 2-5 words and each focus line under 20 words.";
+      const planUser = "Platform: "+platform+"\nContent type: social post with caption and accompanying image\nCreator's primary goal: "+goal+"\nReview tone requested: "+tone+"\n\nDesign the 4-person review board for this specific post.";
+      const planRaw = await callClaude(planSystem, [{type:"text", text: planUser}], 700);
+      const planFields = parseFields(planRaw);
+      const reviewers = [];
+      for(let i=1;i<=4;i++){
+        const name = planFields['REVIEWER_'+i+'_NAME'];
+        const focus = planFields['REVIEWER_'+i+'_FOCUS'];
+        if(name) reviewers.push({name, focus: focus||''});
+      }
+      if(reviewers.length === 0){
+        reviewers.push(
+          {name:'Hook & Retention Editor', focus:'Evaluates the opening line and scroll-stopping power.'},
+          {name:'Platform Fit Strategist', focus:'Checks formatting and norms for the platform.'},
+          {name:'Visual Storytelling Critic', focus:'Assesses how the image supports the message.'},
+          {name:'Engagement & CTA Coach', focus:'Reviews the call to action and discussion potential.'}
+        );
+      }
+      renderBoard(reviewers);
+      log('Review board assembled: ' + reviewers.map(r=>r.name).join(', '));
+
+      // STAGE 2: run each reviewer sequentially
+      const reviewTone = tone;
+      const reviewResults = [];
+      for(let i=0;i<reviewers.length;i++){
+        const r = reviewers[i];
+        setReviewerStatus(i, 'active');
+        statusHint.textContent = r.name + ' is reviewing...';
+        log(r.name + ' has started their review.');
+
+        const reviewerSystem = "You are "+r.name+", a specialist reviewer at an elite social media consultancy, embedded within a multi-reviewer editorial board. Your specific focus: "+r.focus+"\n\nYou are reviewing a "+platform+" post (caption text plus its accompanying image, if provided) whose creator's goal is: "+goal+". Adopt a review tone that is: "+reviewTone+".\n\nAnalyze BOTH the caption text and the image directly and specifically — reference concrete details from each. Be concrete, specific to this post, and avoid generic advice. Output ONLY in this exact plain-text format, no JSON, no markdown bullets with asterisks:\n### SCORE ###\n<a single integer 0-100 reflecting this post's quality through your specific lens>\n### STRENGTHS ###\n<2-3 short lines, one per line, no bullet symbols needed, each a specific strength>\n### WEAKNESSES ###\n<2-3 short lines, specific weaknesses>\n### NOTES ###\n<2-4 sentences of your specific professional reasoning>";
+        const reviewerUserText = "CAPTION TEXT:\n"+(postText || "[No caption text was provided — an image was submitted alone.]")+"\n\nAnalyze this post from your specialist perspective as "+r.name+".";
+        let reviewerRaw;
+        try{
+          reviewerRaw = await callClaude(reviewerSystem, buildUserContent(reviewerUserText), 900);
+        }catch(e){
+          reviewerRaw = "### SCORE ###\n60\n### STRENGTHS ###\nCould not complete full analysis due to a connection issue.\n### WEAKNESSES ###\nReview incomplete.\n### NOTES ###\nThis reviewer's pass failed after retries: " + e.message;
+          log('⚠ '+r.name+' had trouble connecting, using partial result.');
+        }
+        const fields = parseFields(reviewerRaw);
+        reviewResults.push({
+          name: r.name, focus: r.focus,
+          score: parseInt((fields.SCORE||'').match(/\d+/)?.[0] || '60', 10),
+          strengths: parseListLines(fields.STRENGTHS),
+          weaknesses: parseListLines(fields.WEAKNESSES),
+          notes: fields.NOTES || ''
+        });
+        setReviewerStatus(i, 'done');
+        log(r.name + ' finished — score ' + reviewResults[reviewResults.length-1].score + '/100.');
+      }
+
+      // STAGE 3: synthesis / final report
+      statusHint.textContent = 'Synthesizing final report...';
+      log('Editor-in-chief is synthesizing the final report...');
+      const boardSummary = reviewResults.map(r=>
+        r.name+" (focus: "+r.focus+") scored this "+r.score+"/100.\nStrengths noted: "+r.strengths.join('; ')+"\nWeaknesses noted: "+r.weaknesses.join('; ')+"\nReasoning: "+r.notes
+      ).join('\n\n');
+
+      const synthSystem = "You are the editor-in-chief synthesizing independent reviews from your specialist board into one final, decisive content intelligence report for a "+platform+" post. The creator's goal is: "+goal+". Review tone: "+reviewTone+". You have access to the original caption and the image directly — analyze both yourself as well, don't just repeat the panel. Be specific to this exact post, never generic. Output ONLY in this exact plain-text format, no JSON, no asterisk bullets — use plain lines for lists:\n### OVERALL_SCORE ###\n<single integer 0-100>\n### EXEC_SUMMARY ###\n<3-4 sentences, direct and decisive, mentioning specific content from the post>\n### CATEGORY_1_NAME ###\n<short category name, e.g. Hook Strength>\n### CATEGORY_1_SCORE ###\n<integer 0-100>\n### CATEGORY_1_NOTE ###\n<one sentence>\n### CATEGORY_2_NAME ###\n...(same pattern)\n### CATEGORY_2_SCORE ###\n...\n### CATEGORY_2_NOTE ###\n...\n### CATEGORY_3_NAME ###\n...\n### CATEGORY_3_SCORE ###\n...\n### CATEGORY_3_NOTE ###\n...\n### CATEGORY_4_NAME ###\n...\n### CATEGORY_4_SCORE ###\n...\n### CATEGORY_4_NOTE ###\n...\n### STRENGTHS ###\n<3-5 lines, one specific strength per line>\n### WEAKNESSES ###\n<3-5 lines, one specific weakness per line>\n### OPPORTUNITIES ###\n<3-5 lines, one specific missed opportunity per line>\n### REWRITE ###\n<a fully rewritten version of the caption, ready to post, matching the platform's norms and the creator's voice as much as possible>\n### HOOK_1 ###\n<an alternative opening line/hook>\n### HOOK_2 ###\n...\n### HOOK_3 ###\n...\n### HOOK_4 ###\n...\n### CHECKLIST ###\n<5-7 lines, one publishing checklist item per line, specific to this post>\n### PERFORMANCE_ESTIMATE ###\n<3-5 sentences giving a directional AI estimate of engagement potential vs this creator's likely baseline, explicitly caveated as an estimate not a guarantee>\n### DEEPER_PROMPT_1 ###\n<a follow-up prompt the creator could ask the board to optimize further>\n### DEEPER_PROMPT_2 ###\n...\n### DEEPER_PROMPT_3 ###\n...";
+      const synthUserText = "ORIGINAL CAPTION:\n"+(postText || "[No caption text — image only.]")+"\n\nINDEPENDENT BOARD REVIEWS:\n"+boardSummary+"\n\nProduce the final synthesized content intelligence report.";
+      let synthRaw;
+      try{
+        synthRaw = await callClaude(synthSystem, buildUserContent(synthUserText), 3000);
+      }catch(e){
+        showErr('The final synthesis failed after retries: ' + e.message + '. Your individual reviewer scores above are still valid — you can try running again.');
+        runBtn.disabled = false;
+        runBtn.textContent = 'Assemble the review board →';
+        statusHint.textContent = '';
+        return;
+      }
+      const f = parseFields(synthRaw);
+      renderResults(f, postText, reviewResults);
+      log('Final report ready.');
+      statusHint.textContent = 'Review complete.';
+      runBtn.disabled = false;
+      runBtn.textContent = 'Run another review →';
+      resultsSection.style.display = 'block';
+      setTimeout(()=> resultsSection.scrollIntoView({behavior:'smooth', block:'start'}), 300);
+
+    }catch(err){
+      showErr('Something went wrong: ' + err.message + '. Please check your connection and try again.');
+      runBtn.disabled = false;
+      runBtn.textContent = 'Assemble the review board →';
+      statusHint.textContent = '';
+    }
+  }
+
+  // ---------- render results ----------
+  function renderResults(f, postText, reviewResults){
+    const overall = parseInt((f.OVERALL_SCORE||'').match(/\d+/)?.[0] || '0', 10);
+    document.getElementById('score-num').textContent = overall;
+    const circle = document.getElementById('score-circle');
+    const circumference = 352;
+    const offset = circumference - (overall/100)*circumference;
+    requestAnimationFrame(()=>{ circle.style.strokeDashoffset = offset; });
+    document.getElementById('exec-summary').innerHTML = '<strong>Executive summary.</strong> ' + escapeHtml(f.EXEC_SUMMARY||'');
+
+    // categories
+    const catGrid = document.getElementById('cat-grid');
+    catGrid.innerHTML = '';
+    for(let i=1;i<=4;i++){
+      const name = f['CATEGORY_'+i+'_NAME'];
+      if(!name) continue;
+      const score = parseInt((f['CATEGORY_'+i+'_SCORE']||'').match(/\d+/)?.[0] || '0', 10);
+      const note = f['CATEGORY_'+i+'_NOTE']||'';
+      const div = document.createElement('div');
+      div.className = 'cat-card';
+      div.innerHTML = '<div class="cat-head"><span class="cat-name">'+escapeHtml(name)+'</span><span class="cat-score">'+score+'</span></div>'+
+        '<div class="cat-bar"><div class="cat-bar-fill" style="width:0%" data-w="'+score+'"></div></div>'+
+        '<div class="cat-text">'+escapeHtml(note)+'</div>';
+      catGrid.appendChild(div);
+    }
+    setTimeout(()=>{
+      document.querySelectorAll('.cat-bar-fill').forEach(el=>{ el.style.width = el.getAttribute('data-w')+'%'; });
+    }, 80);
+
+    // swot
+    fillList('list-strengths', parseListLines(f.STRENGTHS));
+    fillList('list-weaknesses', parseListLines(f.WEAKNESSES));
+    fillList('list-opportunities', parseListLines(f.OPPORTUNITIES));
+
+    // rewrite
+    document.getElementById('original-body').textContent = postText || '(no caption text submitted)';
+    document.getElementById('rewrite-body').textContent = f.REWRITE || '';
+    document.getElementById('copy-rewrite').onclick = ()=>{
+      navigator.clipboard.writeText(f.REWRITE||'').then(()=>{
+        const btn = document.getElementById('copy-rewrite');
+        const orig = btn.textContent; btn.textContent = 'Copied!';
+        setTimeout(()=> btn.textContent = orig, 1500);
+      });
+    };
+
+    // hooks
+    const hookList = document.getElementById('hook-list');
+    hookList.innerHTML = '';
+    for(let i=1;i<=4;i++){
+      const h = f['HOOK_'+i];
+      if(!h) continue;
+      const div = document.createElement('div');
+      div.className = 'hook-item';
+      div.innerHTML = '<span class="idx">'+i+'</span><span>'+escapeHtml(h)+'</span>';
+      hookList.appendChild(div);
+    }
+
+    // checklist
+    const checklist = document.getElementById('checklist');
+    checklist.innerHTML = '';
+    parseListLines(f.CHECKLIST).forEach((item, idx)=>{
+      const label = document.createElement('label');
+      label.innerHTML = '<input type="checkbox" id="chk-'+idx+'"><span>'+escapeHtml(item)+'</span>';
+      checklist.appendChild(label);
+    });
+
+    // performance
+    document.getElementById('perf-body').innerHTML = escapeHtml(f.PERFORMANCE_ESTIMATE||'').replace(/\n/g,'<br>');
+
+    // deeper prompts
+    const promptList = document.getElementById('prompt-list');
+    promptList.innerHTML = '';
+    for(let i=1;i<=3;i++){
+      const p = f['DEEPER_PROMPT_'+i];
+      if(!p) continue;
+      const div = document.createElement('div');
+      div.className = 'prompt-chip';
+      div.textContent = p;
+      div.title = 'Click to copy';
+      div.onclick = ()=> navigator.clipboard.writeText(p);
+      promptList.appendChild(div);
+    }
+  }
+
+  function fillList(id, items){
+    const ul = document.getElementById(id);
+    ul.innerHTML = '';
+    items.forEach(it=>{
+      const li = document.createElement('li');
+      li.textContent = it;
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- tabs ----------
+  document.getElementById('tab-nav').addEventListener('click', (e)=>{
+    if(!e.target.classList.contains('tab-btn')) return;
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('tab-'+e.target.dataset.tab).classList.add('active');
+  });
+
+})();
+</script>
+</body>
+</html>
