@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python vs JavaScript vs Java vs Go — Compare &amp; Decide</title>
+<style>
+  :root{
+    --bg:#0f1115;
+    --panel:#171a21;
+    --panel-2:#1e222b;
+    --border:#2a2f3a;
+    --text:#e8eaf0;
+    --text-dim:#9aa1b0;
+    --accent:#5b8cff;
+    --accent-2:#9b5bff;
+    --good:#3ecf8e;
+    --warn:#f5a524;
+    --bad:#f5566a;
+    --py:#4b8bbe;
+    --js:#e8c547;
+    --java:#e8724c;
+    --go:#5bc4bf;
+    --radius:14px;
+    --shadow:0 8px 24px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(91,140,255,0.12), transparent),
+      radial-gradient(1000px 500px at 100% 0%, rgba(155,91,255,0.10), transparent),
+      var(--bg);
+    color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    padding: 28px 16px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+  header.top{margin-bottom:28px;}
+  header.top h1{
+    font-size:clamp(1.5rem, 3vw, 2.1rem);
+    margin:0 0 6px;
+    letter-spacing:-0.02em;
+  }
+  header.top p{color:var(--text-dim);margin:0;font-size:0.98rem;max-width:720px;}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+  .pill{
+    font-size:0.72rem;
+    padding:5px 10px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    color:var(--text-dim);
+    background:var(--panel);
+  }
+  .grid{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    gap:20px;
+    align-items:start;
+  }
+  @media (max-width:920px){
+    .grid{grid-template-columns:1fr;}
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:20px;
+    box-shadow:var(--shadow);
+  }
+  .card + .card{margin-top:20px;}
+  h2{font-size:1.02rem;margin:0 0 14px;letter-spacing:-0.01em;}
+  h3{font-size:0.92rem;margin:0 0 10px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+
+  /* weight sliders */
+  .criterion{margin-bottom:18px;}
+  .criterion:last-child{margin-bottom:0;}
+  .criterion-label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:6px;font-size:0.88rem;
+  }
+  .criterion-label .name{font-weight:600;}
+  .criterion-label .val{color:var(--accent);font-variant-numeric:tabular-nums;font-size:0.82rem;}
+  input[type=range]{
+    -webkit-appearance:none;width:100%;height:6px;border-radius:4px;
+    background:var(--panel-2);outline:none;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);cursor:pointer;border:3px solid #0f1115;
+    box-shadow:0 0 0 1px var(--accent);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;background:var(--accent);
+    border:3px solid #0f1115;cursor:pointer;
+  }
+  .criterion .desc{font-size:0.76rem;color:var(--text-dim);margin-top:4px;}
+  .reset-btn{
+    width:100%;margin-top:6px;padding:9px 12px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text);font-size:0.82rem;cursor:pointer;
+    transition:background .15s;
+  }
+  .reset-btn:hover{background:#262b36;}
+  .preset-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .preset-btn{
+    flex:1;min-width:100px;padding:8px 10px;border-radius:9px;border:1px solid var(--border);
+    background:var(--panel-2);color:var(--text-dim);font-size:0.74rem;cursor:pointer;text-align:center;
+  }
+  .preset-btn:hover{color:var(--text);border-color:var(--accent);}
+
+  /* ranking */
+  .rank-item{
+    display:grid;
+    grid-template-columns:36px 1fr auto;
+    gap:14px;
+    align-items:center;
+    padding:14px 14px;
+    border-radius:12px;
+    background:var(--panel-2);
+    border:1px solid var(--border);
+    margin-bottom:10px;
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .rank-item.first{
+    border-color:rgba(91,140,255,0.5);
+    box-shadow:0 0 0 1px rgba(91,140,255,0.25) inset;
+  }
+  .rank-num{
+    font-weight:800;font-size:1.1rem;color:var(--text-dim);text-align:center;
+  }
+  .rank-item.first .rank-num{color:var(--accent);}
+  .rank-main{min-width:0;}
+  .rank-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .lang-dot{width:10px;height:10px;border-radius:50%;flex:none;}
+  .lang-name{font-weight:700;font-size:1rem;}
+  .rank-bar-track{
+    height:8px;border-radius:6px;background:#0f1115;overflow:hidden;
+  }
+  .rank-bar-fill{
+    height:100%;border-radius:6px;
+    transition:width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .rank-score{
+    font-weight:800;font-size:1.3rem;font-variant-numeric:tabular-nums;
+    min-width:64px;text-align:right;
+  }
+  .rank-score small{display:block;font-size:0.62rem;color:var(--text-dim);font-weight:500;text-align:right;}
+
+  /* details table */
+  table{width:100%;border-collapse:collapse;font-size:0.84rem;}
+  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--border);}
+  th{color:var(--text-dim);font-weight:600;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.03em;}
+  td.num{font-variant-numeric:tabular-nums;}
+  .lang-tag{display:inline-flex;align-items:center;gap:6px;font-weight:700;}
+  .lang-tag .lang-dot{width:8px;height:8px;}
+  .estimate-flag{
+    display:inline-block;font-size:0.62rem;padding:2px 6px;border-radius:5px;
+    background:rgba(245,165,36,0.15);color:var(--warn);border:1px solid rgba(245,165,36,0.35);
+    margin-left:6px;white-space:nowrap;
+  }
+  .sourced-flag{
+    display:inline-block;font-size:0.62rem;padding:2px 6px;border-radius:5px;
+    background:rgba(62,207,142,0.12);color:var(--good);border:1px solid rgba(62,207,142,0.3);
+    margin-left:6px;white-space:nowrap;
+  }
+
+  /* collapsibles */
+  details{
+    background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:0; margin-top:20px; box-shadow:var(--shadow); overflow:hidden;
+  }
+  details summary{
+    cursor:pointer;padding:16px 20px;font-weight:700;font-size:0.95rem;
+    list-style:none;display:flex;align-items:center;justify-content:space-between;
+    user-select:none;
+  }
+  details summary::-webkit-details-marker{display:none;}
+  details summary .chev{transition:transform .2s;color:var(--text-dim);}
+  details[open] summary .chev{transform:rotate(180deg);}
+  .details-body{padding:0 20px 20px;color:var(--text-dim);font-size:0.87rem;}
+  .details-body h4{color:var(--text);font-size:0.85rem;margin:16px 0 6px;}
+  .details-body p{margin:0 0 10px;}
+  .details-body ul{margin:0 0 10px;padding-left:20px;}
+  .details-body li{margin-bottom:6px;}
+  .source-item{
+    padding:10px 0;border-bottom:1px solid var(--border);
+  }
+  .source-item:last-child{border-bottom:none;}
+  .source-item a{color:var(--accent);text-decoration:none;font-weight:600;font-size:0.86rem;}
+  .source-item a:hover{text-decoration:underline;}
+  .source-meta{font-size:0.76rem;color:var(--text-dim);margin-top:2px;}
+  .conflict-box{
+    background:rgba(245,165,36,0.08);border:1px solid rgba(245,165,36,0.25);
+    border-radius:10px;padding:12px 14px;margin:10px 0;font-size:0.83rem;
+  }
+  .conflict-box strong{color:var(--warn);}
+
+  footer{margin-top:30px;text-align:center;color:var(--text-dim);font-size:0.76rem;}
+
+  /* empty/loading */
+  .loading-row{display:flex;align-items:center;gap:10px;color:var(--text-dim);font-size:0.85rem;padding:20px 0;}
+  .spinner{
+    width:16px;height:16px;border-radius:50%;
+    border:2px solid var(--border);border-top-color:var(--accent);
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>Python vs JavaScript vs Java vs Go</h1>
+    <p>Built for a student weighing job prospects. Adjust how much each factor matters to you — the ranking updates live. All figures are cited; anything estimated or synthesized rather than pulled directly from a dataset is flagged.</p>
+    <div class="badge-row">
+      <span class="pill">🎓 For: students choosing a focus language</span>
+      <span class="pill">📅 Data compiled July 2026</span>
+      <span class="pill">🇺🇸 Salary figures: United States</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: controls -->
+    <div>
+      <div class="card">
+        <h2>Weight what matters to you</h2>
+        <div id="controls"></div>
+        <button class="reset-btn" id="resetBtn">Reset to equal weights</button>
+        <div class="preset-row">
+          <button class="preset-btn" data-preset="pay">💰 Pay-focused</button>
+          <button class="preset-btn" data-preset="demand">📈 Demand-focused</button>
+          <button class="preset-btn" data-preset="easy">🌱 Easiest start</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: results -->
+    <div>
+      <div class="card">
+        <h2>Live ranking</h2>
+        <div id="rankingLoading" class="loading-row"><div class="spinner"></div> Calculating weighted scores…</div>
+        <div id="ranking"></div>
+      </div>
+
+      <div class="card">
+        <h2>Data behind the ranking</h2>
+        <div style="overflow-x:auto;">
+          <table id="dataTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details id="researchPanel">
+    <summary>How this was researched <span class="chev">▾</span></summary>
+    <div class="details-body" id="researchBody"></div>
+  </details>
+
+  <details id="sourcesPanel">
+    <summary>Sources (<span id="sourceCount">0</span>) <span class="chev">▾</span></summary>
+    <div class="details-body" id="sourcesBody"></div>
+  </details>
+
+  <footer>
+    Built as a decision-support tool, not financial or career advice. Job markets shift — verify current figures before making major decisions. No data point here is invented: sourced values are cited directly; estimated/derived values are explicitly flagged and explained in "How this was researched."
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   DATA — every value traceable to a named, dated source.
+   estimate:true flags values that are derived / synthesized
+   rather than a direct reported statistic.
+   ========================================================= */
+
+const LANGS = [
+  { id:'python', name:'Python', color:'#4b8bbe' },
+  { id:'javascript', name:'JavaScript', color:'#e8c547' },
+  { id:'java', name:'Java', color:'#e8724c' },
+  { id:'go', name:'Go', color:'#5bc4bf' },
+];
+
+const CRITERIA = [
+  {
+    id:'demand',
+    name:'Job market demand',
+    unit:'% of professional devs using it',
+    higherIsBetter:true,
+    desc:'Share of professional developers who used the language in the past year.',
+    values:{ python:54.8, javascript:68.8, java:29.6, go:17.4 },
+    estimate:false,
+    sourceIds:['so2025tech']
+  },
+  {
+    id:'salary',
+    name:'Average salary',
+    unit:'USD / year (US avg.)',
+    higherIsBetter:true,
+    desc:'Average annual salary for a "[Language] Developer" role in the United States.',
+    values:{ python:130020, javascript:123043, java:119136, go:136221 },
+    estimate:false,
+    sourceIds:['gd_py','gd_js','gd_java','gd_go']
+  },
+  {
+    id:'performance',
+    name:'Runtime performance',
+    unit:'× slower than C (lower = faster)',
+    higherIsBetter:false,
+    desc:'Approximate relative execution-speed cluster from the Computer Language Benchmarks Game, as summarized by an independent analysis of that dataset.',
+    values:{ python:60, javascript:6, java:4, go:4 },
+    estimate:true,
+    estimateNote:'These are midpoints of published speed "clusters" (not single official multipliers), and vary a lot by workload — CPU-bound loops favor Go/Java heavily, while I/O-bound work narrows the gap considerably.',
+    sourceIds:['benchmarksgame','dartperf']
+  },
+  {
+    id:'trend',
+    name:'Popularity trend',
+    unit:'index (0–100, higher = growing faster)',
+    higherIsBetter:true,
+    desc:'Directional momentum: is usage/interest in the language currently rising or falling?',
+    values:{ python:90, javascript:55, go:65, java:30 },
+    estimate:true,
+    estimateNote:'Only Python has a precise, directly reported year-over-year figure (a +7 percentage-point jump in usage from 2024→2025, the largest of any language surveyed). JavaScript, Go, and Java scores are an analyst synthesis of directional statements across TIOBE and Stack Overflow reporting (JavaScript = long-running stable leader; Go = steady multi-year climb; Java = fell to its lowest-ever TIOBE ranking in March 2026) rather than a single comparable percentage for all four.',
+    sourceIds:['so2025blog','tiobe2026','statstimes']
+  },
+  {
+    id:'learning',
+    name:'Learning curve (ease for beginners)',
+    unit:'index (0–100, higher = easier/faster to learn)',
+    higherIsBetter:true,
+    desc:'How approachable the language is for someone learning to code for the first time.',
+    values:{ python:90, javascript:75, java:45, go:55 },
+    estimate:true,
+    estimateNote:'Derived primarily from the share of Stack Overflow respondents who are "Learning to Code" and already use each language (Python 71.8%, JavaScript 62.8%, Java 40.8%, Go 13.1%) as a proxy for beginner accessibility, adjusted qualitatively for known language design factors (dynamic vs. static typing, syntax verbosity). Go\'s low beginner-adoption figure is a poor fit for its famously minimal syntax — it is rarely chosen as a first language despite being simple to read — so its score was adjusted upward from the raw proxy number. This is a judgment call, not a direct measurement of "difficulty."',
+    sourceIds:['so2025tech']
+  },
+];
+
+const SOURCES = {
+  so2025tech:{
+    title:'Technology | 2025 Stack Overflow Developer Survey',
+    org:'Stack Overflow',
+    date:'2025 (31,771–49,000+ global respondents)',
+    url:'https://survey.stackoverflow.co/2025/technology',
+    note:'Used for: job market demand (Professional Developer usage %) and the "Learning to Code" usage rates underlying the learning-curve estimate.'
+  },
+  so2025blog:{
+    title:'Developers remain willing but reluctant to use AI: The 2025 Developer Survey results are here',
+    org:'Stack Overflow Blog',
+    date:'December 2025',
+    url:'https://stackoverflow.blog/2025/12/29/developers-remain-willing-but-reluctant-to-use-ai-the-2025-developer-survey-results-are-here/',
+    note:'Confirms Python\'s +7 percentage-point usage jump 2024→2025, the largest single-year increase reported.'
+  },
+  tiobe2026:{
+    title:'TIOBE Index for July 2026: Top 10 Most Popular Programming Languages',
+    org:'TechRepublic (reporting on TIOBE Software data)',
+    date:'July 2026',
+    url:'https://www.techrepublic.com/article/news-tiobe-index-language-rankings/',
+    note:'Python #1 at 18.94% "with a wide lead"; Java holds the #4 spot; JavaScript #6; Go outside the top 10 this month.'
+  },
+  statstimes:{
+    title:'Top Computer Languages 2026',
+    org:'StatisticsTimes.com',
+    date:'2026',
+    url:'https://www.statisticstimes.com/tech/top-computer-languages.php',
+    note:'Reports Java reached its lowest-ever TIOBE position (4th) in March 2026, used as evidence for Java\'s declining trend score.'
+  },
+  gd_py:{
+    title:'Python Developer: Average Salary & Pay Trends 2026',
+    org:'Glassdoor',
+    date:'2026',
+    url:'https://www.glassdoor.com/Salaries/python-developer-salary-SRCH_KO0,16.htm',
+    note:'Average salary $130,020/yr, US.'
+  },
+  gd_js:{
+    title:'Javascript Developer: Average Salary & Pay Trends 2026',
+    org:'Glassdoor',
+    date:'2026',
+    url:'https://www.glassdoor.com/Salaries/javascript-developer-salary-SRCH_KO0,20.htm',
+    note:'Average salary $123,043/yr, US.'
+  },
+  gd_java:{
+    title:'Java Developer: Average Salary & Pay Trends 2026',
+    org:'Glassdoor',
+    date:'2026',
+    url:'https://www.glassdoor.com/Salaries/java-developer-salary-SRCH_KO0,14.htm',
+    note:'Average salary $119,136/yr, US.'
+  },
+  gd_go:{
+    title:'Go Developer: Average Salary & Pay Trends 2026',
+    org:'Glassdoor',
+    date:'2026',
+    url:'https://www.glassdoor.com/Salaries/go-developer-salary-SRCH_KO0,12.htm',
+    note:'Average salary $136,221/yr, US.'
+  },
+  benchmarksgame:{
+    title:'Computer Language Benchmarks Game — Python 3 / Java / Go comparisons',
+    org:'benchmarksgame-team (Debian project)',
+    date:'ongoing, accessed 2026',
+    url:'https://benchmarksgame-team.pages.debian.net/benchmarksgame/fastest/python.html',
+    note:'Primary raw-benchmark dataset used to characterize relative speed clusters.'
+  },
+  dartperf:{
+    title:'Chapter 3: Is Dart fast enough?',
+    org:'filiph.net',
+    date:'accessed 2026',
+    url:'https://filiph.net/flutter-performance/030-is-dart-fast-enough.html',
+    note:'Independent summary of Benchmarks Game results into speed clusters: "C and C++ and Rust are the fastest… the next cluster of 10 languages is about 3x to 5x slower than C and includes Fortran, Julia, Java, Go and Swift… [followed by] a cluster about 5x to 7x slower [including] Javascript (Node.js)… [and Python] 60x slower."'
+  },
+};
+
+const PRESETS = {
+  pay:      { demand:15, salary:60, performance:10, trend:5,  learning:10 },
+  demand:   { demand:55, salary:15, performance:5,  trend:20, learning:5  },
+  easy:     { demand:10, salary:10, performance:5,  trend:5,  learning:70 },
+  equal:    { demand:20, salary:20, performance:20, trend:20, learning:20 },
+};
+
+let weights = {...PRESETS.equal};
+
+/* ---------- render controls ---------- */
+function renderControls(){
+  const el = document.getElementById('controls');
+  el.innerHTML = '';
+  CRITERIA.forEach(c=>{
+    const row = document.createElement('div');
+    row.className='criterion';
+    row.innerHTML = `
+      <div class="criterion-label">
+        <span class="name">${c.name}</span>
+        <span class="val" id="val-${c.id}">${weights[c.id]}</span>
+      </div>
+      <input type="range" min="0" max="100" step="1" value="${weights[c.id]}" id="slider-${c.id}">
+      <div class="desc">${c.desc}${c.estimate ? ' <span class="estimate-flag">⚠ estimate</span>' : ''}</div>
+    `;
+    el.appendChild(row);
+  });
+  CRITERIA.forEach(c=>{
+    document.getElementById(`slider-${c.id}`).addEventListener('input', e=>{
+      weights[c.id] = parseInt(e.target.value,10);
+      document.getElementById(`val-${c.id}`).textContent = weights[c.id];
+      renderRanking();
+    });
+  });
+}
+
+/* ---------- scoring ---------- */
+function normalize(criterion){
+  const vals = LANGS.map(l=>criterion.values[l.id]);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const out = {};
+  LANGS.forEach(l=>{
+    const v = criterion.values[l.id];
+    let score;
+    if(max===min){ score = 100; }
+    else if(criterion.higherIsBetter){ score = ((v-min)/(max-min))*100; }
+    else { score = ((max-v)/(max-min))*100; }
+    out[l.id]=score;
+  });
+  return out;
+}
+
+function computeScores(){
+  const totalWeight = CRITERIA.reduce((s,c)=>s+weights[c.id],0);
+  const norm = {};
+  CRITERIA.forEach(c=>{ norm[c.id]=normalize(c); });
+
+  const results = LANGS.map(l=>{
+    let score = 0;
+    if(totalWeight>0){
+      CRITERIA.forEach(c=>{
+        const w = weights[c.id]/totalWeight;
+        score += norm[c.id][l.id]*w;
+      });
+    }
+    return { ...l, score };
+  });
+  results.sort((a,b)=>b.score-a.score);
+  return results;
+}
+
+/* ---------- render ranking ---------- */
+function renderRanking(){
+  const loadingEl = document.getElementById('rankingLoading');
+  const container = document.getElementById('ranking');
+
+  const totalWeight = CRITERIA.reduce((s,c)=>s+weights[c.id],0);
+
+  if(totalWeight===0){
+    loadingEl.style.display='none';
+    container.innerHTML = `<div class="loading-row" style="color:var(--warn)">⚠ All weights are at zero — set at least one slider above 0 to see a ranking.</div>`;
+    return;
+  }
+
+  loadingEl.style.display='none';
+  const results = computeScores();
+  container.innerHTML='';
+
+  results.forEach((r,i)=>{
+    const item = document.createElement('div');
+    item.className = 'rank-item' + (i===0?' first':'');
+    item.innerHTML = `
+      <div class="rank-num">#${i+1}</div>
+      <div class="rank-main">
+        <div class="rank-top">
+          <span class="lang-dot" style="background:${r.color}"></span>
+          <span class="lang-name">${r.name}</span>
+        </div>
+        <div class="rank-bar-track">
+          <div class="rank-bar-fill" style="width:${r.score.toFixed(1)}%; background:${r.color}"></div>
+        </div>
+      </div>
+      <div class="rank-score">${r.score.toFixed(1)}<small>/ 100</small></div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+/* ---------- data table ---------- */
+function renderTable(){
+  const table = document.getElementById('dataTable');
+  let head = '<thead><tr><th>Criterion</th>';
+  LANGS.forEach(l=>{ head+=`<th><span class="lang-tag"><span class="lang-dot" style="background:${l.color}"></span>${l.name}</span></th>`; });
+  head+='</tr></thead>';
+
+  let body = '<tbody>';
+  CRITERIA.forEach(c=>{
+    body += `<tr><td>${c.name}<br><span style="color:var(--text-dim);font-size:0.72rem">${c.unit}</span>${c.estimate?'<span class="estimate-flag">⚠ estimate</span>':'<span class="sourced-flag">✓ sourced</span>'}</td>`;
+    LANGS.forEach(l=>{
+      const v = c.values[l.id];
+      const display = (c.id==='salary') ? '$'+v.toLocaleString() : (c.id==='performance' ? '~'+v+'×' : v);
+      body += `<td class="num">${display}</td>`;
+    });
+    body += '</tr>';
+  });
+  body += '</tbody>';
+  table.innerHTML = head+body;
+}
+
+/* ---------- research panel ---------- */
+function renderResearch(){
+  const el = document.getElementById('researchBody');
+  el.innerHTML = `
+    <p>This comparison pulls each data point from a named, dated source rather than a single "best language" listicle. Two kinds of numbers appear above:</p>
+    <ul>
+      <li><span class="sourced-flag">✓ sourced</span> — a figure reported directly by the cited source (e.g. Glassdoor's average salary figure, Stack Overflow's usage percentage).</li>
+      <li><span class="estimate-flag">⚠ estimate</span> — a figure synthesized or judged from multiple sources because no single dataset directly measures that criterion for all four languages on a comparable scale.</li>
+    </ul>
+
+    <h4>Job market demand</h4>
+    <p>Taken directly from the 2025 Stack Overflow Developer Survey's "Professional Developers" usage figures — the cleanest apples-to-apples demand signal across all four languages, since it comes from one survey with one methodology.</p>
+
+    <h4>Average salary</h4>
+    <p>Pulled from Glassdoor's per-role salary pages for consistency (same source, same methodology, same year). Cross-checking against Indeed's job-posting-derived averages showed similar ordering but different absolute numbers (e.g. Indeed's Java Developer average was reported around $115,600 vs. Glassdoor's $119,136) — a reminder that "average salary" depends heavily on which job postings or self-reported salaries feed the estimate.</p>
+    <div class="conflict-box"><strong>Conflict resolved:</strong> Multiple secondary "roundup" articles cited a Go average salary as high as $146,879 (attributed to VentureBeat/DevJobsScanner) alongside Glassdoor's $136,221. We used Glassdoor throughout for methodological consistency across all four languages rather than mixing sources per-language.</div>
+
+    <h4>Runtime performance</h4>
+    <p>There is no single "language X is N times faster than language Y" number that fairly represents an entire language — it depends completely on the task, implementation, and runtime version. Rather than invent a false precision, this comparison uses the well-known clustering from the Computer Language Benchmarks Game (as summarized by an independent third-party analysis): Go and Java land in a "3–5× slower than C" cluster, JavaScript/Node.js in a "5–7× slower" cluster, and Python around "60× slower" on CPU-bound micro-benchmarks. This is explicitly flagged as an estimate because real-world application performance is dominated by architecture, I/O patterns, and libraries — not raw language speed.</p>
+
+    <h4>Popularity trend</h4>
+    <p>Only Python has one clean, directly reported number here: a 7-percentage-point usage jump from 2024 to 2025, described by Stack Overflow as the largest single-year increase of any language they measured. Java's declining trend is also directly documented (its lowest-ever TIOBE ranking, March 2026). JavaScript and Go's trend scores are qualitative judgments built from directional language in TIOBE and Stack Overflow commentary, since no single source reports a comparable percentage change for all four languages side by side.</p>
+
+    <h4>Learning curve</h4>
+    <p>The closest available proxy is the share of Stack Overflow's "Learning to Code" respondents already using each language — on the logic that beginners gravitate toward accessible languages. Python and JavaScript's high beginner-usage rates track the common wisdom that they're approachable first languages. Go is the clearest limitation of this proxy: its low beginner-adoption number (13.1%) mostly reflects that people rarely choose it as a first language, not that it's hard to learn — Go was explicitly designed for minimal, readable syntax. Its score was adjusted upward from the raw proxy number to reflect that distinction, which makes it a judgment call rather than a hard measurement.</p>
+
+    <h4>What this comparison does <em>not</em> capture</h4>
+    <ul>
+      <li>Salary figures are US-only and skew toward roles with the language's name literally in the job title — they undercount, e.g., Go engineers hired as "Backend Engineer" or "Site Reliability Engineer."</li>
+      <li>"Job market demand" measures current developer usage, not open job requisitions specifically.</li>
+      <li>None of this accounts for your personal interests, prior programming background, or the specific industry you want to enter (e.g. Java remains dominant in enterprise/finance backends regardless of its TIOBE trend).</li>
+    </ul>
+  `;
+}
+
+/* ---------- sources panel ---------- */
+function renderSources(){
+  const el = document.getElementById('sourcesBody');
+  const ids = Object.keys(SOURCES);
+  document.getElementById('sourceCount').textContent = ids.length;
+  el.innerHTML = ids.map(id=>{
+    const s = SOURCES[id];
+    return `
+      <div class="source-item">
+        <a href="${s.url}" target="_blank" rel="noopener">${s.title}</a>
+        <div class="source-meta">${s.org} · ${s.date}</div>
+        <div class="source-meta">${s.note}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------- presets / reset ---------- */
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  weights = {...PRESETS.equal};
+  renderControls();
+  renderRanking();
+});
+document.querySelectorAll('.preset-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const key = btn.getAttribute('data-preset');
+    weights = {...PRESETS[key]};
+    renderControls();
+    renderRanking();
+  });
+});
+
+/* ---------- init ---------- */
+function init(){
+  try{
+    renderControls();
+    renderTable();
+    renderResearch();
+    renderSources();
+    setTimeout(renderRanking, 250); // brief simulated compute state
+  }catch(err){
+    document.getElementById('ranking').innerHTML =
+      `<div class="loading-row" style="color:var(--bad)">⚠ Something went wrong rendering the comparison (${err.message}). Try reloading the page.</div>`;
+    console.error(err);
+  }
+}
+init();
+</script>
+</body>
+</html>
